@@ -1,0 +1,3 @@
+[submodule "cppfront"]
+	path = cppfront
+	url = git@github.com:hsutter/cppfront.git
