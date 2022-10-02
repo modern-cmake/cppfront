@@ -56,6 +56,8 @@ Here's the code.
 cmake_minimum_required(VERSION 3.23)
 project(example)
 
+include(FetchContent)
+
 FetchContent_Declare(
     cppfront
     GIT_REPOSITORY https://github.com/modern-cmake/cppfront.git
