@@ -46,3 +46,13 @@ jobs:
       - name: Run regression tests
         run: ctest --output-on-failure -C Release -j 2
         working-directory: build/regression-tests
+
+      # Example
+      - name: Configure example
+        run: >
+          cmake -G Ninja -S example -B build/example -DCMAKE_BUILD_TYPE=Release
+          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
+      - name: Build example
+        run: cmake --build build/example --config Release
+      - name: Run example
+        run: ./build/example/main && cmake -E cat xyzzy
