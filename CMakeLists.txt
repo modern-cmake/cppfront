@@ -33,7 +33,7 @@ endif ()
 ##
 # Target definition for cppfront executable
 
-add_executable(cppfront_cppfront source/cppfront.cpp)
+add_executable(cppfront_cppfront cppfront/source/cppfront.cpp)
 add_executable(cppfront::cppfront ALIAS cppfront_cppfront)
 set_target_properties(
     cppfront_cppfront
@@ -47,8 +47,8 @@ target_sources(
     cppfront_cppfront
     PRIVATE
     FILE_SET HEADERS
-    BASE_DIRS source
-    FILES source/common.h source/lex.h source/load.h source/parse.h source/sema.h
+    BASE_DIRS cppfront/source
+    FILES cppfront/source/common.h cppfront/source/lex.h cppfront/source/load.h cppfront/source/parse.h cppfront/source/sema.h
 )
 
 ##
@@ -66,8 +66,8 @@ target_sources(
     cppfront_cpp2util
     INTERFACE
     FILE_SET HEADERS
-    BASE_DIRS include
-    FILES include/cpp2util.h
+    BASE_DIRS cppfront/include
+    FILES cppfront/include/cpp2util.h
 )
 
 ##
