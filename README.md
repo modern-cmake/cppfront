@@ -8,6 +8,10 @@ This repository is a wrapper around that one, offering a CMake build with some
 
 Requires CMake 3.23+.
 
+**Disclaimer:** As `cppfront` is highly experimental, expect abrupt, backwards-incompatible changes to be made here,
+too. This isn't a production-ready ecosystem, and breaking changes will be made if they improve the overall project.
+We're on [major-version 0](https://semver.org/#spec-item-4) for the foreseeable future.
+
 ## Getting started
 
 See the [example](/example) for a full example project.
