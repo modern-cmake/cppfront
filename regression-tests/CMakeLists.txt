@@ -6,17 +6,12 @@ enable_testing()
 set(CPPFRONT_NO_MAGIC 1)
 find_package(cppfront REQUIRED)
 
-# The following tests aren't expected to be buildable C++, even if
-# cppfront succeeds.
-set(
-    codegen_only_tests
-    mixed-postfix-expression-custom-formatting
-)
+set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
 
-    configure_file("${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
+    configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
     add_test(
@@ -25,7 +20,7 @@ function(cppfront_command_tests)
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 
-    file(READ "test-results/${ARG_SOURCE}-output" expected_output)
+    file(READ "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output" expected_output)
     string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
     string(REPLACE "(" "\\(" expected_output "${expected_output}")
     string(REPLACE ")" "\\)" expected_output "${expected_output}")
@@ -35,7 +30,12 @@ function(cppfront_command_tests)
     string(REPLACE "+" "\\+" expected_output "${expected_output}")
     string(REPLACE "*" "\\*" expected_output "${expected_output}")
 
-    set_tests_properties("codegen/${test_name}" PROPERTIES PASS_REGULAR_EXPRESSION "^${expected_output}$")
+    set_tests_properties(
+        "codegen/${test_name}"
+        PROPERTIES
+        FIXTURES_SETUP "codegen/${test_name}"
+        PASS_REGULAR_EXPRESSION "^${expected_output}$"
+    )
 
     if (ARG_EXPECTED_FILE)
         cmake_path(REPLACE_EXTENSION ARG_SOURCE "cpp" OUTPUT_VARIABLE gen_cpp_src)
@@ -46,13 +46,24 @@ function(cppfront_command_tests)
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         )
 
-        set_tests_properties("codegen/${test_name}" PROPERTIES FIXTURES_SETUP "codegen/${test_name}")
         set_tests_properties("codegen/check/${test_name}" PROPERTIES FIXTURES_REQUIRED "codegen/${test_name}")
+
+        cppfront_build_tests(
+            SOURCE ${ARG_SOURCE}
+            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+        )
     endif ()
 endfunction()
 
-function(cppfront_cmake_tests)
+function(cppfront_build_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "EXTRA_FLAGS")
+
+    # The following tests aren't expected to be buildable C++, even if
+    # cppfront succeeds.
+    set(
+        codegen_only_tests
+        mixed-postfix-expression-custom-formatting
+    )
 
     cmake_path(GET ARG_SOURCE STEM stem)
     if (stem IN_LIST codegen_only_tests)
@@ -62,7 +73,7 @@ function(cppfront_cmake_tests)
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${stem}")
     set(test_name "build/${stem}")
 
-    configure_file("${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)
+    configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
 
     add_test(
@@ -86,32 +97,34 @@ function(cppfront_tests)
     # Naughty, but needed for quick rebasing... :(
     file(
         GLOB sources
-        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-        CONFIGURE_DEPENDS "${ARG_GROUP}-*.cpp2"
+        RELATIVE "${REGRESSION_TESTS_DIR}"
+        CONFIGURE_DEPENDS "${REGRESSION_TESTS_DIR}/${ARG_GROUP}-*.cpp2"
     )
 
     foreach (src IN LISTS sources)
         cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_file)
-        set(expected_file "${CMAKE_CURRENT_SOURCE_DIR}/test-results/${expected_file}")
+        set(expected_file "${REGRESSION_TESTS_DIR}/test-results/${expected_file}")
 
-        if (EXISTS "${expected_file}")
-            cppfront_cmake_tests(
-                SOURCE ${src}
-                EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
-            )
-            cppfront_command_tests(
-                SOURCE ${src}
-                EXPECTED_FILE ${expected_file}
-                EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
-            )
-        else ()
-            cppfront_command_tests(
-                SOURCE ${src}
-                EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
-            )
+        if (NOT EXISTS "${expected_file}")
+            set(expected_file "")
         endif ()
+
+        cppfront_command_tests(
+            SOURCE ${src}
+            EXPECTED_FILE ${expected_file}
+            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+        )
     endforeach ()
 endfunction()
 
 cppfront_tests(GROUP mixed)
 cppfront_tests(GROUP pure2 EXTRA_FLAGS -p)
+
+##
+# Upstream failures
+
+set_tests_properties(
+    build/mixed-captures-in-expressions-and-postconditions
+    PROPERTIES
+    WILL_FAIL TRUE
+)
