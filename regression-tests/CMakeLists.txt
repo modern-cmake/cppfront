@@ -14,38 +14,40 @@ set(
 )
 
 function(cppfront_command_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_CPP;EXPECTED_OUTPUT" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
 
-    cmake_path(GET ARG_SOURCE FILENAME src_filename)
-    configure_file("${ARG_SOURCE}" "${src_filename}" COPYONLY)
+    configure_file("${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
     add_test(
-        NAME "${test_name}"
-        COMMAND cppfront::cppfront "${src_filename}" ${ARG_EXTRA_FLAGS}
+        NAME "codegen/${test_name}"
+        COMMAND cppfront::cppfront "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 
-    file(READ "${ARG_EXPECTED_OUTPUT}" expected_output)
+    file(READ "test-results/${ARG_SOURCE}-output" expected_output)
     string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
     string(REPLACE "(" "\\(" expected_output "${expected_output}")
     string(REPLACE ")" "\\)" expected_output "${expected_output}")
     string(REPLACE "[" "\\[" expected_output "${expected_output}")
     string(REPLACE "]" "\\]" expected_output "${expected_output}")
+    string(REPLACE "." "\\." expected_output "${expected_output}")
+    string(REPLACE "+" "\\+" expected_output "${expected_output}")
+    string(REPLACE "*" "\\*" expected_output "${expected_output}")
 
-    set_tests_properties("${test_name}" PROPERTIES PASS_REGULAR_EXPRESSION "^${expected_output}$")
+    set_tests_properties("codegen/${test_name}" PROPERTIES PASS_REGULAR_EXPRESSION "^${expected_output}$")
 
-    if (ARG_EXPECTED_CPP)
-        cmake_path(REPLACE_EXTENSION src_filename "cpp" OUTPUT_VARIABLE gen_cpp_src)
+    if (ARG_EXPECTED_FILE)
+        cmake_path(REPLACE_EXTENSION ARG_SOURCE "cpp" OUTPUT_VARIABLE gen_cpp_src)
 
         add_test(
-            NAME "${test_name}/check"
-            COMMAND "${CMAKE_COMMAND}" -E compare_files "${gen_cpp_src}" "${ARG_EXPECTED_CPP}"
+            NAME "codegen/check/${test_name}"
+            COMMAND "${CMAKE_COMMAND}" -E compare_files "${gen_cpp_src}" "${ARG_EXPECTED_FILE}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         )
 
-        set_tests_properties("${test_name}" PROPERTIES FIXTURES_SETUP "${test_name}/check")
-        set_tests_properties("${test_name}/check" PROPERTIES FIXTURES_REQUIRED "${test_name}/check")
+        set_tests_properties("codegen/${test_name}" PROPERTIES FIXTURES_SETUP "codegen/${test_name}")
+        set_tests_properties("codegen/check/${test_name}" PROPERTIES FIXTURES_REQUIRED "codegen/${test_name}")
     endif ()
 endfunction()
 
@@ -58,9 +60,9 @@ function(cppfront_cmake_tests)
     endif ()
 
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${stem}")
-    set(test_name "${stem}/build")
+    set(test_name "build/${stem}")
 
-    configure_file("${ARG_SOURCE}" "${test_dir}/${stem}.cpp2" COPYONLY)
+    configure_file("${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
 
     add_test(
@@ -78,44 +80,33 @@ function(cppfront_cmake_tests)
     )
 endfunction()
 
-function(insert_dir pathvar dir)
-    cmake_path(GET "${pathvar}" FILENAME filename)
-    cmake_path(GET "${pathvar}" PARENT_PATH base)
-    cmake_path(APPEND base "${dir}" "${filename}" OUTPUT_VARIABLE "${pathvar}")
-    set("${pathvar}" "${${pathvar}}" PARENT_SCOPE)
-endfunction()
-
 function(cppfront_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "GROUP" "EXTRA_FLAGS")
 
-    # Naughty, but needed for quick submodule updates... :(
+    # Naughty, but needed for quick rebasing... :(
     file(
-        GLOB sources CONFIGURE_DEPENDS 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../cppfront/regression-tests/${ARG_GROUP}-*.cpp2"
+        GLOB sources
+        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+        CONFIGURE_DEPENDS "${ARG_GROUP}-*.cpp2"
     )
 
     foreach (src IN LISTS sources)
-        cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_cpp)
-	insert_dir(expected_cpp "test-results")
+        cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_file)
+        set(expected_file "${CMAKE_CURRENT_SOURCE_DIR}/test-results/${expected_file}")
 
-	set(expected_output "${src}-output")
-	insert_dir(expected_output "test-results")
-
-	if (EXISTS "${expected_cpp}")
-	    cppfront_cmake_tests(
+        if (EXISTS "${expected_file}")
+            cppfront_cmake_tests(
                 SOURCE ${src}
                 EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
             )
             cppfront_command_tests(
                 SOURCE ${src}
-		EXPECTED_OUTPUT ${expected_output}
-		EXPECTED_CPP ${expected_cpp}
+                EXPECTED_FILE ${expected_file}
                 EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
             )
         else ()
             cppfront_command_tests(
                 SOURCE ${src}
-		EXPECTED_OUTPUT ${expected_output}
                 EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
             )
         endif ()

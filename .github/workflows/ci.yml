@@ -15,8 +15,6 @@ jobs:
     steps:
       # System set-up
       - uses: actions/checkout@v2
-        with:
-          submodules: recursive
       - uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
 
@@ -44,5 +42,5 @@ jobs:
       - name: Build regression tests
         run: cmake --build build/regression-tests --config Release
       - name: Run regression tests
-        run: ctest --output-on-failure -C Release -j 4
+        run: ctest --output-on-failure -C Release -j 2
         working-directory: build/regression-tests
