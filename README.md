@@ -1,10 +1,11 @@
 # cppfront cmake wrapper
 
+[![CI](https://github.com/modern-cmake/cppfront/actions/workflows/ci.yml/badge.svg)](https://github.com/modern-cmake/cppfront/actions/workflows/ci.yml)
+
 This is a wrapper around Herb Sutter's [cppfront](https://github.com/hsutter/cppfront)
 compiler. Go there to learn more about that project.
 
-This repository is a wrapper around that one, offering a CMake build with some
-"magic" helpers to make it easier to use cpp2.
+This repository adds a CMake build with some "magic" helpers to make it easier to use cpp2.
 
 Requires CMake 3.23+.
 
