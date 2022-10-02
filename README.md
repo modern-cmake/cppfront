@@ -12,6 +12,9 @@ Requires CMake 3.23+.
 too. This isn't a production-ready ecosystem, and breaking changes will be made if they improve the overall project.
 We're on [major-version 0](https://semver.org/#spec-item-4) for the foreseeable future.
 
+**Note:** This work might one day be merged upstream. The open pull request is
+here: https://github.com/hsutter/cppfront/pull/15
+
 ## Getting started
 
 See the [example](/example) for a full example project.
