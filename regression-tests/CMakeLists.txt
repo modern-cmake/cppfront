@@ -119,12 +119,3 @@ endfunction()
 
 cppfront_tests(GROUP mixed)
 cppfront_tests(GROUP pure2 EXTRA_FLAGS -p)
-
-##
-# Upstream failures
-
-set_tests_properties(
-    build/mixed-captures-in-expressions-and-postconditions
-    PROPERTIES
-    WILL_FAIL TRUE
-)
