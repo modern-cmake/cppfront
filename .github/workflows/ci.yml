@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [
           windows-latest,
-          # macos-latest, # cppfront is currently broken on AppleClang
+          macos-latest,
           ubuntu-latest,
         ]
     runs-on: ${{ matrix.os }}
