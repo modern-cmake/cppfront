@@ -20,10 +20,6 @@ function(_cppfront_unique_name base hash outvar)
 endfunction()
 
 function(_cppfront_generate_source src out)
-    # TODO: there's probably something nicer/more user-friendly to be
-    #   done here, but it's maybe not worth thinking about until cppfront's
-    #   command line improves.
-
     file(REAL_PATH "${src}" src)
     string(SHA256 src_hash "${src}")
 
@@ -38,15 +34,12 @@ function(_cppfront_generate_source src out)
 
     # assume no SHA256 collisions
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront/")
-    set(src_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}.cpp2")
     set(out_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}.cpp")
 
     add_custom_command(
         OUTPUT "${out_file}"
-        COMMAND "${CMAKE_COMMAND}" -E copy "${src}" "${src_file}"
-        COMMAND cppfront::cppfront "${basename}.cpp2" ${CPPFRONT_FLAGS}
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront"
-        DEPENDS "${src}" cppfront::cppfront
+        COMMAND cppfront::cppfront "${src}" -o "${out_file}" ${CPPFRONT_FLAGS}
+        DEPENDS cppfront::cppfront "${src}"
         VERBATIM
     )
 
