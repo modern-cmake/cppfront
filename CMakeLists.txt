@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(
     cppfront
     LANGUAGES CXX
-    VERSION 0.1.0
+    VERSION 0.2.0
 )
 
 ##
@@ -88,59 +88,15 @@ if (CPPFRONT_INSTALL_RULES)
     set(CPPFRONT_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/cmake/cppfront"
         CACHE STRING "Install location for cppfront's platform-independent CMake files")
 
-    set(CPPFRONT_INSTALL_EXE_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/cppfront-exe"
-        CACHE STRING "Install location for cppfront's platform-specific CMake files")
-
-    mark_as_advanced(CPPFRONT_INSTALL_CMAKEDIR CPPFRONT_INSTALL_EXE_CMAKEDIR)
-
-    ##
-    # Install rules for cppfront executable (which is naturally platform
-    # dependent)
+    mark_as_advanced(CPPFRONT_INSTALL_CMAKEDIR)
 
     install(
-        TARGETS cppfront_cppfront
-        EXPORT cppfront-exe-targets
-        COMPONENT cppfront
-    )
-
-    install(
-        EXPORT cppfront-exe-targets
-        DESTINATION "${CPPFRONT_INSTALL_EXE_CMAKEDIR}"
-        NAMESPACE cppfront::
-        COMPONENT cppfront
-    )
-
-    configure_package_config_file(
-        cmake/cppfront-exe-config.cmake.in
-        cmake/cppfront-exe-config.cmake
-        INSTALL_DESTINATION "${CPPFRONT_INSTALL_EXE_CMAKEDIR}"
-        PATH_VARS CMAKE_INSTALL_BINDIR
-    )
-
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake/cppfront-exe-config-version.cmake"
-        COMPATIBILITY ExactVersion
-        ARCH_INDEPENDENT  # to allow finding host executables in cross-builds
-    )
-
-    install(
-        FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake/cppfront-exe-config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake/cppfront-exe-config-version.cmake"
-        DESTINATION "${CPPFRONT_INSTALL_EXE_CMAKEDIR}"
-        COMPONENT cppfront
-    )
-
-    ##
-    # Install rules for cppfront CMake helpers and runtime headers,
-    # which are platform-independent
-
-    install(
-        TARGETS cppfront_cpp2util
+        TARGETS cppfront_cppfront cppfront_cpp2util
         EXPORT cppfront-targets
         FILE_SET HEADERS
         COMPONENT cppfront
     )
+
     install(
         EXPORT cppfront-targets
         DESTINATION "${CPPFRONT_INSTALL_CMAKEDIR}"
@@ -152,12 +108,13 @@ if (CPPFRONT_INSTALL_RULES)
         cmake/cppfront-config.cmake.in
         cmake/cppfront-config.cmake
         INSTALL_DESTINATION "${CPPFRONT_INSTALL_CMAKEDIR}"
+        PATH_VARS CMAKE_INSTALL_BINDIR
     )
 
     write_basic_package_version_file(
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/cppfront-config-version.cmake"
         COMPATIBILITY ExactVersion
-        ARCH_INDEPENDENT
+        ARCH_INDEPENDENT  # to allow finding host executables in cross-builds
     )
 
     install(
