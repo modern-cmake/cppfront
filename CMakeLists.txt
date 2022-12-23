@@ -14,21 +14,13 @@ cmake_dependent_option(
     CPPFRONT_INSTALL_RULES "Include install rules for cppfront" "${PROJECT_IS_TOP_LEVEL}"
     "NOT CMAKE_SKIP_INSTALL_RULES" OFF
 )
+mark_as_advanced(CPPFRONT_INSTALL_RULES)
 
 cmake_dependent_option(
     CPPFRONT_NO_SYSTEM "Do not mark cpp2 runtime headers as SYSTEM" OFF
     "NOT PROJECT_IS_TOP_LEVEL" ON
 )
 mark_as_advanced(CPPFRONT_NO_SYSTEM)
-
-##
-# Compute option-derived constants
-
-if (CPPFRONT_NO_SYSTEM)
-    set(_cppfront_SYSTEM "")
-else ()
-    set(_cppfront_SYSTEM SYSTEM)
-endif ()
 
 ##
 # Target definition for cppfront executable
@@ -59,9 +51,6 @@ add_library(cppfront::cpp2util ALIAS cppfront_cpp2util)
 set_target_properties(cppfront_cpp2util PROPERTIES EXPORT_NAME cpp2util)
 
 target_compile_features(cppfront_cpp2util INTERFACE cxx_std_20)
-target_include_directories(
-    cppfront_cpp2util ${_cppfront_SYSTEM} INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-)
 target_sources(
     cppfront_cpp2util
     INTERFACE
@@ -69,6 +58,16 @@ target_sources(
     BASE_DIRS cppfront/include
     FILES cppfront/include/cpp2util.h
 )
+
+if (NOT CPPFRONT_NO_SYSTEM)
+    # File sets add this path to INTERFACE_INCLUDE_DIRECTORIES, but it should
+    # really be marked as SYSTEM instead when the project is not top-level.
+    target_include_directories(
+        cppfront_cpp2util
+        SYSTEM INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cppfront/include>"
+    )
+endif ()
 
 ##
 # Enable cpp2 autodetection for add_subdirectory users
