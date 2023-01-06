@@ -29,6 +29,7 @@ function(cppfront_command_tests)
     string(REPLACE "." "\\." expected_output "${expected_output}")
     string(REPLACE "+" "\\+" expected_output "${expected_output}")
     string(REPLACE "*" "\\*" expected_output "${expected_output}")
+    string(REPLACE "?" "\\?" expected_output "${expected_output}")
 
     set_tests_properties(
         "codegen/${test_name}"
