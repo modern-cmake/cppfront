@@ -11,16 +11,16 @@ project(
 include(CMakeDependentOption)
 
 cmake_dependent_option(
-    CPPFRONT_INSTALL_RULES "Include install rules for cppfront" "${PROJECT_IS_TOP_LEVEL}"
-    "NOT CMAKE_SKIP_INSTALL_RULES" OFF
-)
-mark_as_advanced(CPPFRONT_INSTALL_RULES)
-
-cmake_dependent_option(
     CPPFRONT_NO_SYSTEM "Do not mark cpp2 runtime headers as SYSTEM" OFF
     "NOT PROJECT_IS_TOP_LEVEL" ON
 )
 mark_as_advanced(CPPFRONT_NO_SYSTEM)
+
+cmake_dependent_option(
+    CPPFRONT_INSTALL_RULES "Include install rules for cppfront" "${PROJECT_IS_TOP_LEVEL}"
+    "NOT CMAKE_SKIP_INSTALL_RULES" OFF
+)
+mark_as_advanced(CPPFRONT_INSTALL_RULES)
 
 ##
 # Target definition for cppfront executable
@@ -33,14 +33,17 @@ set_target_properties(
     OUTPUT_NAME cppfront
     EXPORT_NAME cppfront
 )
-
 target_compile_features(cppfront_cppfront PRIVATE cxx_std_20)
 target_sources(
     cppfront_cppfront
     PRIVATE
     FILE_SET HEADERS
     BASE_DIRS cppfront/source
-    FILES cppfront/source/common.h cppfront/source/lex.h cppfront/source/load.h cppfront/source/parse.h cppfront/source/sema.h
+    FILES cppfront/source/common.h
+          cppfront/source/lex.h
+          cppfront/source/load.h
+          cppfront/source/parse.h
+          cppfront/source/sema.h
 )
 
 ##
