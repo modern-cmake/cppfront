@@ -28,8 +28,15 @@ Build this repository:
 
 ```
 $ git clone --recursive https://github.com/modern-cmake/cppfront
-$ cmake -S cppfront -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/wherever
+$ cd cppfront
+$ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/wherever
 $ cmake --build build --target install
+```
+
+From here, you can run the regression tests:
+
+```
+$ ctest --test-dir build
 ```
 
 Now just write your project like normal:
@@ -44,7 +51,8 @@ add_executable(main main.cpp2)
 ```
 
 And that's literally it. Any targets with a `.cpp2` source will automatically
-get custom commands added to them.
+get custom commands added to them. Don't forget to set `CMAKE_PREFIX_PATH` or
+`cppfront_ROOT` to `/wherever` so that `find_package` can find it.
 
 ### FetchContent
 
