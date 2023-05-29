@@ -34,7 +34,12 @@ function(_cppfront_generate_source src out)
 
     # assume no SHA256 collisions
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront/")
-    set(out_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}.cpp")
+    if(src MATCHES [[.*\.h2]])
+      set(ext ".h")
+    else()
+      set(ext ".cpp")
+    endif()
+    set(out_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}${ext}")
 
     add_custom_command(
         OUTPUT "${out_file}"
@@ -61,7 +66,7 @@ function(cppfront_enable)
 
     foreach (tgt IN LISTS ARG_TARGETS)
         get_property(sources TARGET "${tgt}" PROPERTY SOURCES)
-        list(FILTER sources INCLUDE REGEX "\\.cpp2$")
+        list(FILTER sources INCLUDE REGEX "\\.(cpp|h)2$")
 
         if (sources)
             target_link_libraries("${tgt}" PRIVATE cppfront::cpp2util)
