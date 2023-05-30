@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(
     cppfront
     LANGUAGES CXX
-    VERSION 0.2.0
+    VERSION 0.3.0
 )
 
 ##
@@ -40,9 +40,10 @@ target_sources(
     FILE_SET HEADERS
     BASE_DIRS cppfront/source
     FILES cppfront/source/common.h
+          cppfront/source/io.h
           cppfront/source/lex.h
-          cppfront/source/load.h
           cppfront/source/parse.h
+          cppfront/source/reflect.h
           cppfront/source/sema.h
 )
 
