@@ -54,7 +54,11 @@ add_library(cppfront_cpp2util INTERFACE)
 add_library(cppfront::cpp2util ALIAS cppfront_cpp2util)
 set_target_properties(cppfront_cpp2util PROPERTIES EXPORT_NAME cpp2util)
 
-target_compile_features(cppfront_cpp2util INTERFACE cxx_std_20)
+target_compile_features(
+    cppfront_cpp2util
+    INTERFACE
+    $<IF:$<CXX_COMPILER_ID:MSVC>,cxx_std_23,cxx_std_20>
+)
 target_sources(
     cppfront_cpp2util
     INTERFACE
