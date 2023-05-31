@@ -26,7 +26,7 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1.12.1
         with:
-          toolset: v14.36
+          toolset: v14.34
 
       - uses: lukka/get-cmake@latest
 
