@@ -2,7 +2,9 @@
 
 set -e
 
-export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+if which ccache; then
+  export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+fi
 
 rm -rf build _local
 
