@@ -25,23 +25,26 @@ function(cppfront_command_tests)
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 
-    file(READ "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output" expected_output)
-    string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
-    string(REPLACE "(" "\\(" expected_output "${expected_output}")
-    string(REPLACE ")" "\\)" expected_output "${expected_output}")
-    string(REPLACE "[" "\\[" expected_output "${expected_output}")
-    string(REPLACE "]" "\\]" expected_output "${expected_output}")
-    string(REPLACE "." "\\." expected_output "${expected_output}")
-    string(REPLACE "+" "\\+" expected_output "${expected_output}")
-    string(REPLACE "*" "\\*" expected_output "${expected_output}")
-    string(REPLACE "?" "\\?" expected_output "${expected_output}")
+    set(expected_output_file "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output")
+    if (EXISTS "${expected_output_file}")
+        file(READ "${expected_output_file}" expected_output)
+        string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
+        string(REPLACE "(" "\\(" expected_output "${expected_output}")
+        string(REPLACE ")" "\\)" expected_output "${expected_output}")
+        string(REPLACE "[" "\\[" expected_output "${expected_output}")
+        string(REPLACE "]" "\\]" expected_output "${expected_output}")
+        string(REPLACE "." "\\." expected_output "${expected_output}")
+        string(REPLACE "+" "\\+" expected_output "${expected_output}")
+        string(REPLACE "*" "\\*" expected_output "${expected_output}")
+        string(REPLACE "?" "\\?" expected_output "${expected_output}")
 
-    set_tests_properties(
-        "codegen/${test_name}"
-        PROPERTIES
-        FIXTURES_SETUP "codegen/${test_name}"
-        PASS_REGULAR_EXPRESSION "^${expected_output}$"
-    )
+        set_tests_properties(
+            "codegen/${test_name}"
+            PROPERTIES
+            FIXTURES_SETUP "codegen/${test_name}"
+            PASS_REGULAR_EXPRESSION "^${expected_output}$"
+        )
+    endif ()
 
     if (ARG_EXPECTED_FILE)
         cmake_path(REPLACE_EXTENSION ARG_SOURCE "cpp" OUTPUT_VARIABLE gen_cpp_src)
