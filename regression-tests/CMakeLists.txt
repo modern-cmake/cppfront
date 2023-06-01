@@ -8,12 +8,17 @@ find_package(cppfront REQUIRED)
 
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 
+include("CppfrontDeveloper.cmake")
+
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
+
+    cppfront_dev_setup_to_update_test_results("${test_name}" "${ARG_EXTRA_FLAGS}")
+
     add_test(
         NAME "codegen/${test_name}"
         COMMAND cppfront::cppfront "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
