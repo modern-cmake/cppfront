@@ -8,35 +8,53 @@ find_package(cppfront REQUIRED)
 
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 
+configure_file("cmake/UpdateTestResults.cmake.in" "UpdateTestResults.cmake" @ONLY)
+add_custom_target(cppfront_update_test_results)
+
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
+
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+    add_custom_target(
+        "${test_name}"
+        COMMAND
+        "${CMAKE_COMMAND}"
+        -D "TEST_NAME=${test_name}"
+        -D "EXTRA_FLAGS=${ARG_EXTRA_FLAGS}"
+        -P "UpdateTestResults.cmake"
+    )
+    add_dependencies(cppfront_update_test_results "${test_name}")
+
     add_test(
         NAME "codegen/${test_name}"
         COMMAND cppfront::cppfront "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 
-    file(READ "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output" expected_output)
-    string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
-    string(REPLACE "(" "\\(" expected_output "${expected_output}")
-    string(REPLACE ")" "\\)" expected_output "${expected_output}")
-    string(REPLACE "[" "\\[" expected_output "${expected_output}")
-    string(REPLACE "]" "\\]" expected_output "${expected_output}")
-    string(REPLACE "." "\\." expected_output "${expected_output}")
-    string(REPLACE "+" "\\+" expected_output "${expected_output}")
-    string(REPLACE "*" "\\*" expected_output "${expected_output}")
-    string(REPLACE "?" "\\?" expected_output "${expected_output}")
+    set(expected_output_file "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output")
+    if (EXISTS "${expected_output_file}")
+        file(READ "${expected_output_file}" expected_output)
+        string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
+        string(REPLACE "(" "\\(" expected_output "${expected_output}")
+        string(REPLACE ")" "\\)" expected_output "${expected_output}")
+        string(REPLACE "[" "\\[" expected_output "${expected_output}")
+        string(REPLACE "]" "\\]" expected_output "${expected_output}")
+        string(REPLACE "." "\\." expected_output "${expected_output}")
+        string(REPLACE "+" "\\+" expected_output "${expected_output}")
+        string(REPLACE "*" "\\*" expected_output "${expected_output}")
+        string(REPLACE "?" "\\?" expected_output "${expected_output}")
 
-    set_tests_properties(
-        "codegen/${test_name}"
-        PROPERTIES
-        FIXTURES_SETUP "codegen/${test_name}"
-        PASS_REGULAR_EXPRESSION "^${expected_output}$"
-    )
+        set_tests_properties(
+            "codegen/${test_name}"
+            PROPERTIES
+            FIXTURES_SETUP "codegen/${test_name}"
+            PASS_REGULAR_EXPRESSION "^${expected_output}$"
+        )
+    endif ()
 
     if (ARG_EXPECTED_FILE)
         cmake_path(REPLACE_EXTENSION ARG_SOURCE "cpp" OUTPUT_VARIABLE gen_cpp_src)
