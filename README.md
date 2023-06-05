@@ -139,4 +139,4 @@ processing the directory.
 
 The CMake project `regression-tests/CMakeLists.txt` runs the test suite of cppfront.
 See "Regression tests" at [`./.github/workflows/ci.yml`](./.github/workflows/ci.yml) for how to set it up.
-To update the test results, build with `--target cppfront_update_test_results`.
+To have the test results updated, configure with `-DCPPFRONT_DEVELOPING=TRUE`.

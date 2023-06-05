@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
 project(cppfront-regression-tests LANGUAGES NONE)
 
+option(CPPFRONT_DEVELOPING "Test results are updated.")
+
 enable_testing()
 
 set(CPPFRONT_NO_MAGIC 1)
@@ -8,8 +10,7 @@ find_package(cppfront REQUIRED)
 
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 
-configure_file("cmake/UpdateTestResults.cmake.in" "UpdateTestResults.cmake" @ONLY)
-add_custom_target(cppfront_update_test_results)
+configure_file("cmake/ExecuteWithRedirection.cmake" "ExecuteWithRedirection.cmake" COPYONLY)
 
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
@@ -18,22 +19,34 @@ function(cppfront_command_tests)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
 
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
-    add_custom_target(
-        "${test_name}"
-        COMMAND
-        "${CMAKE_COMMAND}"
-        -D "TEST_NAME=${test_name}"
-        -D "EXTRA_FLAGS=${ARG_EXTRA_FLAGS}"
-        -P "UpdateTestResults.cmake"
-    )
-    add_dependencies(cppfront_update_test_results "${test_name}")
-
+    if (NOT "${test_name}" MATCHES [[.*-error$]])
+        set(gen_cpp_src "${test_name}.cpp")
+        set(COMMAND_ERROR_IS_FATAL "COMMAND_ERROR_IS_FATAL" "ANY")
+    endif ()
     add_test(
         NAME "codegen/${test_name}"
-        COMMAND cppfront::cppfront "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
+        COMMAND
+        "${CMAKE_COMMAND}"
+        -D "OUTPUT_FILE=${ARG_SOURCE}.output"
+        -P "ExecuteWithRedirection.cmake"
+        --
+        "${CPPFRONT_EXECUTABLE}" "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
+        ${COMMAND_ERROR_IS_FATAL}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+    if (CPPFRONT_DEVELOPING)
+        add_test(
+            NAME "codegen/update/${test_name}"
+            COMMAND
+            "${CMAKE_COMMAND}"
+            -E copy_if_different
+            "${gen_cpp_src}"
+            "${ARG_SOURCE}.output"
+            "${REGRESSION_TESTS_DIR}/test-results/"
+        )
+        set_tests_properties("codegen/update/${test_name}" PROPERTIES FIXTURES_CLEANUP "codegen/${test_name}")
+    endif ()
 
     set(expected_output_file "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output")
     if (EXISTS "${expected_output_file}")
@@ -57,11 +70,10 @@ function(cppfront_command_tests)
     endif ()
 
     if (ARG_EXPECTED_FILE)
-        cmake_path(REPLACE_EXTENSION ARG_SOURCE "cpp" OUTPUT_VARIABLE gen_cpp_src)
-
+        configure_file("${ARG_EXPECTED_FILE}" "${gen_cpp_src}.original" COPYONLY)
         add_test(
             NAME "codegen/check/${test_name}"
-            COMMAND "${CMAKE_COMMAND}" -E compare_files "${gen_cpp_src}" "${ARG_EXPECTED_FILE}"
+            COMMAND "${CMAKE_COMMAND}" -E compare_files "${gen_cpp_src}" "${gen_cpp_src}.original"
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         )
 
