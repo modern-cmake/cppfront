@@ -46,6 +46,7 @@ function(cppfront_command_tests)
             "${REGRESSION_TESTS_DIR}/test-results/"
         )
         set_tests_properties("codegen/update/${test_name}" PROPERTIES FIXTURES_CLEANUP "codegen/${test_name}")
+        set(build_test_depends "codegen/update/${test_name}")
     endif ()
 
     set(expected_output_file "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output")
@@ -96,19 +97,18 @@ function(cppfront_build_tests)
         mixed-postfix-expression-custom-formatting
     )
 
-    cmake_path(GET ARG_SOURCE STEM stem)
-    if (stem IN_LIST codegen_only_tests)
+    cmake_path(GET ARG_SOURCE STEM test_name)
+    if (test_name IN_LIST codegen_only_tests)
         return()
     endif ()
 
-    set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${stem}")
-    set(test_name "build/${stem}")
+    set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
 
     add_test(
-        NAME "${test_name}"
+        NAME "build/${test_name}"
         COMMAND
         "${CMAKE_CTEST_COMMAND}"
         --build-and-test "${test_dir}" "${test_dir}/build"
@@ -120,6 +120,7 @@ function(cppfront_build_tests)
         "-Dcppfront-exe_DIR=${cppfront-exe_DIR}"
         "-DCPPFRONT_FLAGS=${ARG_EXTRA_FLAGS}"
     )
+    set_tests_properties("build/${test_name}" PROPERTIES DEPENDS "${build_test_depends};codegen/check/${test_name}")
 endfunction()
 
 function(cppfront_tests)
