@@ -114,17 +114,7 @@ endfunction()
 function(cppfront_build_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "EXTRA_FLAGS")
 
-    # The following tests aren't expected to be buildable C++, even if
-    # cppfront succeeds.
-    set(
-        codegen_only_tests
-        mixed-postfix-expression-custom-formatting
-    )
-
     cmake_path(GET ARG_SOURCE STEM test_name)
-    if (test_name IN_LIST codegen_only_tests)
-        return()
-    endif ()
 
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
 
