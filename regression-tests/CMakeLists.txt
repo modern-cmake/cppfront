@@ -144,22 +144,22 @@ function(cppfront_build_tests)
         FIXTURES_SETUP "build/${test_name}"
     )
 
-    if (CPPFRONT_DEVELOPING)
-        add_test(
-            NAME "build/execute/${test_name}"
-            COMMAND
-            "${CMAKE_COMMAND}"
-            -D "OUTPUT_FILE=${test_dir}/${gen_cpp_src}.execution"
-            -P "../ExecuteTestCase.cmake"
-            WORKING_DIRECTORY "${test_dir}"
-        )
-        set_tests_properties(
-            "build/execute/${test_name}"
-            PROPERTIES
-            FIXTURES_REQUIRED "build/${test_name}"
-            FIXTURES_SETUP "build/execute/${test_name}"
-            RESOURCE_LOCK "test.exe")
+    add_test(
+        NAME "build/execute/${test_name}"
+        COMMAND
+        "${CMAKE_COMMAND}"
+        -D "OUTPUT_FILE=${test_dir}/${gen_cpp_src}.execution"
+        -P "../ExecuteTestCase.cmake"
+        WORKING_DIRECTORY "${test_dir}"
+    )
+    set_tests_properties(
+        "build/execute/${test_name}"
+        PROPERTIES
+        FIXTURES_REQUIRED "build/${test_name}"
+        FIXTURES_SETUP "build/execute/${test_name}"
+        RESOURCE_LOCK "test.exe")
 
+    if (CPPFRONT_DEVELOPING)
         add_test(
             NAME "build/update/${test_name}"
             COMMAND
