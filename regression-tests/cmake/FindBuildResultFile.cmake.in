@@ -1,0 +1,28 @@
+# Set `OLD_BUILD_RESULTS_DIRS`.
+file(
+    GLOB build_result_dirs
+    RELATIVE "@TEST_RESULTS_DIR@"
+    "@TEST_RESULTS_DIR@/@compiler_id@-*"
+)
+list(SORT build_result_dirs)
+list(FIND build_result_dirs "@COMPILER_ITEM_NAME@" i)
+list(SUBLIST build_result_dirs 0 ${i} OLD_BUILD_RESULTS_DIRS)
+list(REVERSE OLD_BUILD_RESULTS_DIRS)
+
+function(cppfront_find_build_result_file out_var)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "OLD_ONLY" "RESULT_FILE" "")
+
+    if (NOT ARG_OLD_ONLY)
+        set(extra_item "@COMPILER_ITEM_NAME@")
+    endif ()
+
+    foreach (build_results_dir IN ITEMS "${extra_item}" LISTS OLD_BUILD_RESULTS_DIRS)
+        set(result_file "@TEST_RESULTS_DIR@/${build_results_dir}/${ARG_RESULT_FILE}")
+        if (EXISTS "${result_file}")
+            set("${out_var}" "${result_file}" PARENT_SCOPE)
+            return()
+        endif ()
+    endforeach ()
+
+    unset("${out_var}" PARENT_SCOPE)
+endfunction()

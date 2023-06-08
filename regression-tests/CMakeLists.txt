@@ -11,20 +11,21 @@ find_package(cppfront REQUIRED)
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 set(TEST_RESULTS_DIR "${REGRESSION_TESTS_DIR}/test-results")
 
-if (CPPFRONT_DEVELOPING)
-    # Set `compiler_id` and `compiler_major_version`.
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(compiler_id "gcc")
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-        set(compiler_id "apple-clang")
-    else ()
-        string(TOLOWER "${CMAKE_CXX_COMPILER_ID}" compiler_id)
-    endif ()
-    string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+# Set `COMPILER_ITEM_NAME`.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(compiler_id "gcc")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set(compiler_id "apple-clang")
+else ()
+    string(TOLOWER "${CMAKE_CXX_COMPILER_ID}" compiler_id)
+endif ()
+string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+set(COMPILER_ITEM_NAME "${compiler_id}-${compiler_major_version}")
 
-    # Setup `BUILD_RESULTS_DIR`.
-    set(compiler_item_name "${compiler_id}-${compiler_major_version}")
-    set(BUILD_RESULTS_DIR "${TEST_RESULTS_DIR}/${compiler_item_name}")
+# Setup `BUILD_RESULTS_DIR`.
+set(BUILD_RESULTS_DIR "${TEST_RESULTS_DIR}/${COMPILER_ITEM_NAME}")
+
+if (CPPFRONT_DEVELOPING)
     file(MAKE_DIRECTORY "${BUILD_RESULTS_DIR}")
 
     # Write compiler version output.
@@ -36,22 +37,25 @@ if (CPPFRONT_DEVELOPING)
         COMMAND ${compiler_version_command}
         OUTPUT_FILE "${BUILD_RESULTS_DIR}/${compiler_id}-version.output"
     )
-
-    # Set `OLD_BUILD_RESULTS_DIRS`.
-    file(
-        GLOB build_result_dirs
-        RELATIVE "${TEST_RESULTS_DIR}"
-        "${TEST_RESULTS_DIR}/${compiler_id}-*"
-    )
-    list(SORT build_result_dirs)
-    list(FIND build_result_dirs "${compiler_item_name}" i)
-    list(SUBLIST build_result_dirs 0 ${i} OLD_BUILD_RESULTS_DIRS)
-    list(REVERSE OLD_BUILD_RESULTS_DIRS)
 endif ()
 
 configure_file("cmake/ExecuteWithRedirection.cmake" "ExecuteWithRedirection.cmake" COPYONLY)
 configure_file("cmake/ExecuteTestCase.cmake.in" "ExecuteTestCase.cmake" @ONLY)
+configure_file("cmake/FindBuildResultFile.cmake.in" "FindBuildResultFile.cmake" @ONLY)
 configure_file("cmake/UpdateBuildOutput.cmake.in" "UpdateBuildOutput.cmake" @ONLY)
+
+include("${CMAKE_CURRENT_BINARY_DIR}/FindBuildResultFile.cmake")
+
+function(cppfront_add_check_test)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "NAME;NEW_FILE;OLD_FILE;FIXTURES_REQUIRED" "")
+
+    add_test(
+        NAME "${ARG_NAME}"
+        COMMAND "${CMAKE_COMMAND}" -E compare_files "${ARG_NEW_FILE}" "${ARG_OLD_FILE}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+    set_tests_properties("${ARG_NAME}" PROPERTIES FIXTURES_REQUIRED "${ARG_FIXTURES_REQUIRED}")
+endfunction()
 
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
@@ -113,13 +117,12 @@ function(cppfront_command_tests)
 
     if (ARG_EXPECTED_FILE)
         configure_file("${ARG_EXPECTED_FILE}" "${gen_cpp_src}.original" COPYONLY)
-        add_test(
+        cppfront_add_check_test(
             NAME "codegen/check/${test_name}"
-            COMMAND "${CMAKE_COMMAND}" -E compare_files "${gen_cpp_src}" "${gen_cpp_src}.original"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            NEW_FILE "${gen_cpp_src}"
+            OLD_FILE "${gen_cpp_src}.original"
+            FIXTURES_REQUIRED "codegen/${test_name}"
         )
-
-        set_tests_properties("codegen/check/${test_name}" PROPERTIES FIXTURES_REQUIRED "codegen/${test_name}")
 
         cppfront_build_tests(
             SOURCE ${ARG_SOURCE}
@@ -161,6 +164,16 @@ function(cppfront_build_tests)
         FIXTURES_SETUP "build/${test_name}"
     )
 
+    cppfront_find_build_result_file(expected_output_file RESULT_FILE "${gen_cpp_src}.output")
+    if (expected_output_file)
+        cppfront_add_check_test(
+            NAME "build/check/${test_name}"
+            NEW_FILE "${test_dir}/build/${gen_cpp_src}.output"
+            OLD_FILE "${expected_output_file}"
+            FIXTURES_REQUIRED "build/${test_name}"
+        )
+    endif()
+
     add_test(
         NAME "build/execute/${test_name}"
         COMMAND
@@ -176,7 +189,22 @@ function(cppfront_build_tests)
         FIXTURES_SETUP "build/execute/${test_name}"
         RESOURCE_LOCK "test.exe")
 
+    cppfront_find_build_result_file(expected_execution_file RESULT_FILE "${gen_cpp_src}.execution")
+    if (expected_execution_file)
+        cppfront_add_check_test(
+            NAME "build/execute/check/${test_name}"
+            NEW_FILE "${test_dir}/${gen_cpp_src}.execution"
+            OLD_FILE "${expected_execution_file}"
+            FIXTURES_REQUIRED "build/execute/${test_name}"
+        )
+    endif()
+
     if (CPPFRONT_DEVELOPING)
+        # Trigger regeneration to add the `check` tests for newly added results.
+        if (NOT DEFINED expected_output_file OR NOT DEFINED expected_execution_file)
+            file(GLOB unused CONFIGURE_DEPENDS "${BUILD_RESULTS_DIR}/${gen_cpp_src}.*")
+        endif()
+
         add_test(
             NAME "build/update/${test_name}"
             COMMAND
