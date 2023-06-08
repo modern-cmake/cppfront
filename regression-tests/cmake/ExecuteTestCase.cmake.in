@@ -8,7 +8,7 @@ execute_process(
     "${CMAKE_COMMAND}"
     -E copy
     "${TEST_CASE_EXECUTABLE}"
-    "@TEST_RESULTS_BUILD_DIR@/test.exe"
+    "@BUILD_RESULTS_DIR@/test.exe"
 )
 execute_process(
     COMMAND
@@ -18,6 +18,6 @@ execute_process(
     --
     "./test.exe"
     COMMAND_ERROR_IS_FATAL ANY
-    WORKING_DIRECTORY "@TEST_RESULTS_BUILD_DIR@"
+    WORKING_DIRECTORY "@BUILD_RESULTS_DIR@"
 )
-execute_process(COMMAND "${CMAKE_COMMAND}" -E rm "@TEST_RESULTS_BUILD_DIR@/test.exe")
+execute_process(COMMAND "${CMAKE_COMMAND}" -E rm "@BUILD_RESULTS_DIR@/test.exe")

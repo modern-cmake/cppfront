@@ -9,8 +9,10 @@ set(CPPFRONT_NO_MAGIC 1)
 find_package(cppfront REQUIRED)
 
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
+set(TEST_RESULTS_DIR "${REGRESSION_TESTS_DIR}/test-results")
 
 if (CPPFRONT_DEVELOPING)
+    # Set `compiler_id` and `compiler_major_version`.
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(compiler_id "gcc")
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
@@ -20,21 +22,36 @@ if (CPPFRONT_DEVELOPING)
     endif ()
     string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
 
-    set(TEST_RESULTS_BUILD_DIR "${REGRESSION_TESTS_DIR}/test-results/${compiler_id}-${compiler_major_version}")
-    file(MAKE_DIRECTORY "${TEST_RESULTS_BUILD_DIR}")
+    # Setup `BUILD_RESULTS_DIR`.
+    set(compiler_item_name "${compiler_id}-${compiler_major_version}")
+    set(BUILD_RESULTS_DIR "${TEST_RESULTS_DIR}/${compiler_item_name}")
+    file(MAKE_DIRECTORY "${BUILD_RESULTS_DIR}")
 
+    # Write compiler version output.
     set(compiler_version_command "${CMAKE_CXX_COMPILER}" "--version")
     if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
         set(compiler_id "clang")
     endif ()
     execute_process(
         COMMAND ${compiler_version_command}
-        OUTPUT_FILE "${TEST_RESULTS_BUILD_DIR}/${compiler_id}-version.output"
+        OUTPUT_FILE "${BUILD_RESULTS_DIR}/${compiler_id}-version.output"
     )
+
+    # Set `OLD_BUILD_RESULTS_DIRS`.
+    file(
+        GLOB build_result_dirs
+        RELATIVE "${TEST_RESULTS_DIR}"
+        "${TEST_RESULTS_DIR}/${compiler_id}-*"
+    )
+    list(SORT build_result_dirs)
+    list(FIND build_result_dirs "${compiler_item_name}" i)
+    list(SUBLIST build_result_dirs 0 ${i} OLD_BUILD_RESULTS_DIRS)
+    list(REVERSE OLD_BUILD_RESULTS_DIRS)
 endif ()
 
 configure_file("cmake/ExecuteWithRedirection.cmake" "ExecuteWithRedirection.cmake" COPYONLY)
 configure_file("cmake/ExecuteTestCase.cmake.in" "ExecuteTestCase.cmake" @ONLY)
+configure_file("cmake/UpdateBuildOutput.cmake.in" "UpdateBuildOutput.cmake" @ONLY)
 
 function(cppfront_command_tests)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
@@ -67,13 +84,13 @@ function(cppfront_command_tests)
             -E copy_if_different
             "${gen_cpp_src}"
             "${ARG_SOURCE}.output"
-            "${REGRESSION_TESTS_DIR}/test-results/"
+            "${TEST_RESULTS_DIR}"
         )
         set_tests_properties("codegen/update/${test_name}" PROPERTIES FIXTURES_CLEANUP "codegen/${test_name}")
         set(build_test_depends "codegen/update/${test_name}")
     endif ()
 
-    set(expected_output_file "${REGRESSION_TESTS_DIR}/test-results/${ARG_SOURCE}.output")
+    set(expected_output_file "${TEST_RESULTS_DIR}/${ARG_SOURCE}.output")
     if (EXISTS "${expected_output_file}")
         file(READ "${expected_output_file}" expected_output)
         string(REPLACE "\\" "\\\\" expected_output "${expected_output}")
@@ -164,10 +181,10 @@ function(cppfront_build_tests)
             NAME "build/update/${test_name}"
             COMMAND
             "${CMAKE_COMMAND}"
-            -E copy_if_different
-            "build/${gen_cpp_src}.output"
-            "${gen_cpp_src}.execution"
-            "${TEST_RESULTS_BUILD_DIR}"
+            -D "GEN_CPP_SRC=${gen_cpp_src}"
+            -D "OUTPUT_FILE=build/${gen_cpp_src}.output"
+            -D "EXECUTION_FILE=${gen_cpp_src}.execution"
+            -P "../UpdateBuildOutput.cmake"
             WORKING_DIRECTORY "${test_dir}"
         )
         set_tests_properties(
@@ -190,7 +207,7 @@ function(cppfront_tests)
 
     foreach (src IN LISTS sources)
         cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_file)
-        set(expected_file "${REGRESSION_TESTS_DIR}/test-results/${expected_file}")
+        set(expected_file "${TEST_RESULTS_DIR}/${expected_file}")
 
         if (NOT EXISTS "${expected_file}")
             set(expected_file "")
