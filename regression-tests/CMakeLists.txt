@@ -79,7 +79,9 @@ function(cppfront_command_tests)
         ${COMMAND_ERROR_IS_FATAL}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
+    set_tests_properties("codegen/${test_name}" PROPERTIES FIXTURES_SETUP "codegen/${test_name}")
 
+    unset(build_test_depends)
     if (CPPFRONT_DEVELOPING)
         add_test(
             NAME "codegen/update/${test_name}"
@@ -107,15 +109,10 @@ function(cppfront_command_tests)
         string(REPLACE "*" "\\*" expected_output "${expected_output}")
         string(REPLACE "?" "\\?" expected_output "${expected_output}")
 
-        set_tests_properties(
-            "codegen/${test_name}"
-            PROPERTIES
-            FIXTURES_SETUP "codegen/${test_name}"
-            PASS_REGULAR_EXPRESSION "^${expected_output}$"
-        )
+        set_tests_properties("codegen/${test_name}" PROPERTIES PASS_REGULAR_EXPRESSION "^${expected_output}$")
     endif ()
 
-    if (ARG_EXPECTED_FILE)
+    if (EXISTS "${ARG_EXPECTED_FILE}")
         configure_file("${ARG_EXPECTED_FILE}" "${gen_cpp_src}.original" COPYONLY)
         cppfront_add_check_test(
             NAME "codegen/check/${test_name}"
@@ -123,7 +120,13 @@ function(cppfront_command_tests)
             OLD_FILE "${gen_cpp_src}.original"
             FIXTURES_REQUIRED "codegen/${test_name}"
         )
+        list(APPEND build_test_depends "codegen/check/${test_name}")
+    elseif (CPPFRONT_DEVELOPING)
+        # Trigger regeneration to add the `check` tests for newly added results.
+        file(GLOB unused CONFIGURE_DEPENDS "${ARG_EXPECTED_FILE}")
+    endif ()
 
+    if (DEFINED build_test_depends AND DEFINED gen_cpp_src)
         cppfront_build_tests(
             SOURCE ${ARG_SOURCE}
             EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
@@ -160,7 +163,7 @@ function(cppfront_build_tests)
     set_tests_properties(
         "build/${test_name}"
         PROPERTIES
-        DEPENDS "${build_test_depends};codegen/check/${test_name}"
+        DEPENDS "${build_test_depends}"
         FIXTURES_SETUP "build/${test_name}"
     )
 
@@ -236,10 +239,6 @@ function(cppfront_tests)
     foreach (src IN LISTS sources)
         cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_file)
         set(expected_file "${TEST_RESULTS_DIR}/${expected_file}")
-
-        if (NOT EXISTS "${expected_file}")
-            set(expected_file "")
-        endif ()
 
         cppfront_command_tests(
             SOURCE ${src}
