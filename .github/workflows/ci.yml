@@ -10,22 +10,31 @@ jobs:
       fail-fast: false
       matrix:
         os: [
-          windows-2019,  # 2022's installation is broken for C++ modules
           windows-latest,
           # macos-latest, # cppfront is currently broken on AppleClang
           ubuntu-latest,
         ]
+        include:
+          - os: windows-latest
+            gen: Visual Studio 17 2022
+            flags: /experimental:module
+          - os: ubuntu-latest
+            gen: Ninja
+            flags: ""
+    env:
+      CMAKE_GENERATOR: ${{ matrix.gen }}
+      CXXFLAGS: ${{ matrix.flags }}
     runs-on: ${{ matrix.os }}
     steps:
       # System set-up
       - uses: actions/checkout@v3
         with:
           submodules: true
-      - uses: ilammy/msvc-dev-cmd@v1.12.1
+
       - uses: lukka/get-cmake@latest
 
       - name: Install GCC 11
-        if: startsWith(matrix.os, 'ubuntu')
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-11 g++-11
@@ -34,7 +43,7 @@ jobs:
 
       # Main cppfront library
       - name: Configure cppfront
-        run: cmake -G Ninja -S . -B build/cppfront -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build/cppfront -DCMAKE_BUILD_TYPE=Release
       - name: Build cppfront
         run: cmake --build build/cppfront --config Release
       - name: Install cppfront locally
@@ -43,7 +52,7 @@ jobs:
       # Regression tests
       - name: Configure regression tests
         run: >
-          cmake -G Ninja -S regression-tests -B build/regression-tests -DCMAKE_BUILD_TYPE=Release 
+          cmake -S regression-tests -B build/regression-tests -DCMAKE_BUILD_TYPE=Release 
           "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
       - name: Build regression tests
         run: cmake --build build/regression-tests --config Release
@@ -54,7 +63,7 @@ jobs:
       # Example
       - name: Configure example
         run: >
-          cmake -G Ninja -S example -B build/example -DCMAKE_BUILD_TYPE=Release
+          cmake -S example -B build/example -DCMAKE_BUILD_TYPE=Release
           "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
       - name: Build example
         run: cmake --build build/example --config Release
