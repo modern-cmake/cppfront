@@ -11,6 +11,7 @@ jobs:
       matrix:
         os: [
           windows-2019,  # 2022's installation is broken for C++ modules
+          windows-latest,
           # macos-latest, # cppfront is currently broken on AppleClang
           ubuntu-latest,
         ]
