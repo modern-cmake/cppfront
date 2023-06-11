@@ -17,13 +17,13 @@ jobs:
         include:
           - os: windows-latest
             gen: Visual Studio 17 2022
-            flags: /experimental:module
           - os: ubuntu-latest
             gen: Ninja
-            flags: ""
     env:
       CMAKE_GENERATOR: ${{ matrix.gen }}
-      CXXFLAGS: ${{ matrix.flags }}
+      CMAKE_BUILD_TYPE: Release
+      CMAKE_CONFIG_TYPE: Release
+      CMAKE_PREFIX_PATH: ${{github.workspace}}/_local
     runs-on: ${{ matrix.os }}
     steps:
       # System set-up
@@ -43,29 +43,25 @@ jobs:
 
       # Main cppfront library
       - name: Configure cppfront
-        run: cmake -S . -B build/cppfront -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build/cppfront
       - name: Build cppfront
-        run: cmake --build build/cppfront --config Release
+        run: cmake --build build/cppfront
       - name: Install cppfront locally
-        run: cmake --install build/cppfront --config Release --prefix _local
+        run: cmake --install build/cppfront --prefix _local
 
       # Regression tests
       - name: Configure regression tests
-        run: >
-          cmake -S regression-tests -B build/regression-tests -DCMAKE_BUILD_TYPE=Release 
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
+        run: cmake -S regression-tests -B build/regression-tests 
       - name: Build regression tests
-        run: cmake --build build/regression-tests --config Release
+        run: cmake --build build/regression-tests
       - name: Run regression tests
-        run: ctest --output-on-failure -C Release -j 2
+        run: ctest --output-on-failure -j 2
         working-directory: build/regression-tests
 
       # Example
       - name: Configure example
-        run: >
-          cmake -S example -B build/example -DCMAKE_BUILD_TYPE=Release
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
+        run: cmake -S example -B build/example
       - name: Build example
-        run: cmake --build build/example --config Release
+        run: cmake --build build/example
       - name: Run example
         run: ./build/example/main && cmake -E cat xyzzy
