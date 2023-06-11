@@ -41,6 +41,11 @@ jobs:
           echo "CC=gcc-11" >> $GITHUB_ENV
           echo "CXX=g++-11" >> $GITHUB_ENV
 
+      # Print tool versions
+      - name: Print tool versions
+        run: |
+          cmake --version
+
       # Main cppfront library
       - name: Configure cppfront
         run: cmake -S . -B build/cppfront
