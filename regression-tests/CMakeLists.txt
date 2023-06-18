@@ -235,6 +235,11 @@ function(cppfront_tests)
         RELATIVE "${REGRESSION_TESTS_DIR}"
         CONFIGURE_DEPENDS "${REGRESSION_TESTS_DIR}/${ARG_GROUP}-*.cpp2"
     )
+    # Trigger regeneration to recognize as a test to fail codegen.
+    file(
+        GLOB unused
+        CONFIGURE_DEPENDS "${REGRESSION_TESTS_DIR}/${ARG_GROUP}-*-error.cpp2"
+    )
 
     foreach (src IN LISTS sources)
         cmake_path(REPLACE_EXTENSION src "cpp" OUTPUT_VARIABLE expected_file)
