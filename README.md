@@ -134,3 +134,9 @@ Scans the `SOURCES` properties for each target in `<targets>` for entries ending
 to `cppfront_generate_cpp` and the results are added to the target automatically. When `CPPFRONT_NO_MAGIC` is
 unset (i.e. by default), this command runs on all targets in the directory that imported this package at the end of
 processing the directory.
+
+### Developers
+
+The CMake project `regression-tests/CMakeLists.txt` runs the test suite of cppfront.
+See "Regression tests" at [`./.github/workflows/ci.yml`](./.github/workflows/ci.yml) for how to set it up.
+To update the test results, build with `--target cppfront_update_test_results`.
