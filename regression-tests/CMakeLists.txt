@@ -145,6 +145,15 @@ function(cppfront_build_tests)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
     configure_file("cmake/test-case-config.cmake.in" "${test_dir}/test-case-config.cmake.in" COPYONLY)
 
+    set(
+        cxx_23_tests
+        pure2-bugfix-for-empty-index
+    )
+    set(extra_flags)
+    if (test_name IN_LIST cxx_23_tests)
+        list(APPEND extra_flags "-DCMAKE_CXX_STANDARD=23")
+    endif ()
+
     add_test(
         NAME "build/${test_name}"
         COMMAND
@@ -157,6 +166,7 @@ function(cppfront_build_tests)
         "-Dcppfront_DIR=${cppfront_DIR}"
         "-Dcppfront-exe_DIR=${cppfront-exe_DIR}"
         "-DCPPFRONT_FLAGS=${ARG_EXTRA_FLAGS}"
+        ${extra_flags}
         # There's `CMAKE_CXX_LINKER_LAUNCHER`, too. So far, it's not needed.
         "-DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_COMMAND};-D;OUTPUT_FILE=${gen_cpp_src}.output;-P;../../ExecuteWithRedirection.cmake;--"
     )
