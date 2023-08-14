@@ -13,3 +13,8 @@ target_compile_options(
     PRIVATE
     "$<$<CXX_COMPILER_ID:MSVC>:/experimental:module>"
 )
+if (MSVC AND (MSVC_TOOLSET_VERSION LESS 143))
+    # need -std:c++latest on VS 2019 and below
+    # TODO: consider making this a more precise usage requirement on cppfront_cpp2util
+    target_compile_features(test-case PRIVATE cxx_std_23)
+endif ()
