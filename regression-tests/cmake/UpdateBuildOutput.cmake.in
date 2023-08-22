@@ -1,0 +1,29 @@
+# Updates an output for the current compiler-version
+# when it differs from its previous version or
+# when no previous version has the output file.
+# Objectives:
+# - For "absence of output" to mean that "it's the same as the previous version".
+# - To commit only new and changed outputs in PRs for easier reviewing.
+
+include("@CMAKE_CURRENT_BINARY_DIR@/FindBuildResultFile.cmake")
+
+file(READ "${OUTPUT_FILE}" new_output)
+if (EXISTS "${EXECUTION_FILE}")
+    file(READ "${EXECUTION_FILE}" new_execution)
+endif ()
+
+function(write path_var ext)
+    cppfront_find_build_result_file(result_file OLD_ONLY RESULT_FILE "${GEN_CPP_SRC}.${ext}")
+    if (DEFINED result_file)
+        file(READ "${result_file}" "old_${ext}")
+        if (new_${ext} STREQUAL old_${ext})
+            return()
+        endif ()
+    endif ()
+    file(COPY "${${path_var}}" DESTINATION "@BUILD_RESULTS_DIR@")
+endfunction()
+
+write(OUTPUT_FILE "output")
+if (DEFINED new_execution)
+    write(EXECUTION_FILE "execution")
+endif ()

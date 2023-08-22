@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.23)
+@PACKAGE_INIT@
+
+set_and_check(
+    TEST_CASE_EXECUTABLE
+    "@PACKAGE_CMAKE_INSTALL_BINDIR@/test-case@CMAKE_EXECUTABLE_SUFFIX@"
+)
