@@ -50,7 +50,7 @@ function(_parse_relative_source relative_source out_absolute_source_file out_abs
   endif()
 
   set(absolute_binary "${filestem}${extension}")
-  cmake_path(ABSOLUTE_PATH absolute_binary BASE_DIRECTORY "${CMAKE_BINARY_DIR}/${parent_path}/_cppfront/" NORMALIZE)
+  cmake_path(ABSOLUTE_PATH absolute_binary BASE_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront/${parent_path}/" NORMALIZE)
   set("${out_absolute_binary_file}" "${absolute_binary}" PARENT_SCOPE)
 
   cmake_path(ABSOLUTE_PATH relative_source BASE_DIRECTORY "${CMAKE_SOURCE_DIR}" NORMALIZE OUTPUT_VARIABLE absolute_source)
