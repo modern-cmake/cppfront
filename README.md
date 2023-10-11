@@ -117,7 +117,7 @@ FetchContent-only:
 ### Functions
 
 ```cmake
-cppfront_generate_cpp(<OUTVAR> <cpp2 files>...)
+cppfront_generate_files(<OUTVAR> <cpp2 files>...)
 ```
 
 Writes to the variable named by `OUTVAR` a list of absolute paths to the generated `.cpp` files associated with
@@ -125,15 +125,19 @@ each `.cpp2` file in the arguments list. A hashing scheme prevents `cppfront` fr
 multiple times.
 
 ```cmake
-cppfront_enable(
-    TARGETS <targets>...
-)
+cppfront_enable_targets(<targets>...)
 ```
 
 Scans the `SOURCES` properties for each target in `<targets>` for entries ending in `.cpp2`. These are passed
 to `cppfront_generate_cpp` and the results are added to the target automatically. When `CPPFRONT_NO_MAGIC` is
 unset (i.e. by default), this command runs on all targets in the directory that imported this package at the end of
 processing the directory.
+
+```cmake
+cppfront_enable_directories(<directories>...)
+```
+
+Recursively scans all targets inside `<directories>` and calls `cppfront_enable_targets` for them.
 
 ### Developers
 
