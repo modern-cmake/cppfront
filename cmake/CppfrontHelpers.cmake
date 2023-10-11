@@ -64,11 +64,14 @@ function(_cppfront_generate_file file out)
 
   _parse_relative_source("${source_file}" absolute_source_file absolute_binary_file)
 
+  cmake_path(GET absolute_binary_file PARENT_PATH binary_directory)
+
   add_custom_command(
-    OUTPUT "${absolute_binary_file}"
+    OUTPUT ${absolute_binary_file}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${binary_directory}
     COMMAND cppfront::cppfront "${absolute_source_file}" -o "${absolute_binary_file}" ${CPPFRONT_FLAGS}
     DEPENDS cppfront::cppfront "${absolute_source_file}"
-    COMMENT "Generating the corresponding cpp file"
+    COMMENT "Generating ${absolute_binary_file}"
     VERBATIM
   )
 
@@ -117,7 +120,7 @@ function(_cppfront_enable_target target)
 
     add_custom_target("${target}.parse_cpp2" DEPENDS ${cpp1sources})
     add_dependencies("${target}" "${target}.parse_cpp2")
-    target_sources("${target}" PRIVATE ${cpp1sources})
+    target_sources("${target}" PRIVATE "${cpp1sources}")
   endif()
 endfunction()
 
