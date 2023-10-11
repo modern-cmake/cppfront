@@ -5,4 +5,4 @@ find_package(cppfront REQUIRED)
 # This works, too:
 # add_subdirectory(../cppfront cppfront)
 
-add_executable(main main.cpp2)
+add_subdirectory(app)

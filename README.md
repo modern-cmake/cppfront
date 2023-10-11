@@ -96,7 +96,8 @@ No matter how you use this CMake build, it exposes the following points of confi
 
 Universal:
 
-* `CPPFRONT_NO_MAGIC` -- off by default. When enabled, skips the automatic `cpp2`-to-`cpp` translation.
+* `CPPFRONT_NO_MAGIC` -- disabled by default. When disabled, automatically translate `cpp2`-to-`cpp` for all
+  targets inside the directory where `find_package` is called.
 * `CPPFRONT_FLAGS` -- a semicolon-separated list of additional flags to pass to `cppfront`. For now, these are assumed
   to be universal to a project, and it is not supported to change them after the package has loaded, whether
   via `find_package`, `add_subdirectory`, FetchContent, or any other mechanism.
@@ -117,23 +118,26 @@ FetchContent-only:
 ### Functions
 
 ```cmake
-cppfront_generate_cpp(<OUTVAR> <cpp2 files>...)
+cppfront_generate_files(<OUTVAR> <cpp2 files>...)
 ```
 
 Writes to the variable named by `OUTVAR` a list of absolute paths to the generated `.cpp` files associated with
-each `.cpp2` file in the arguments list. A hashing scheme prevents `cppfront` from running on the same `.cpp2` file
-multiple times.
+each `.cpp2` file in the arguments list.
 
 ```cmake
-cppfront_enable(
-    TARGETS <targets>...
-)
+cppfront_enable_targets(<targets>...)
 ```
 
 Scans the `SOURCES` properties for each target in `<targets>` for entries ending in `.cpp2`. These are passed
-to `cppfront_generate_cpp` and the results are added to the target automatically. When `CPPFRONT_NO_MAGIC` is
+to `cppfront_generate_files` and the results are added to the target automatically. When `CPPFRONT_NO_MAGIC` is
 unset (i.e. by default), this command runs on all targets in the directory that imported this package at the end of
 processing the directory.
+
+```cmake
+cppfront_enable_directories(<directories>...)
+```
+
+Recursively scans all targets inside `<directories>` and calls `cppfront_enable_targets` for them.
 
 ### Developers
 
