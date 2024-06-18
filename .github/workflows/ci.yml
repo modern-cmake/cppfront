@@ -9,11 +9,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          windows-latest,
-          # macos-latest, # cppfront is currently broken on AppleClang
-          ubuntu-latest,
-        ]
+        include:
+          - os: windows-latest
+            script: test-all.ps1
+          - os: ubuntu-latest
+            script: test-all.sh
     runs-on: ${{ matrix.os }}
     steps:
       # System set-up
@@ -27,35 +27,9 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-11 g++-11
-          echo "CC=gcc-11" >> $GITHUB_ENV
-          echo "CXX=g++-11" >> $GITHUB_ENV
+          sudo apt-get install -y gcc-14 g++-14
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
 
-      # Main cppfront library
-      - name: Configure cppfront
-        run: cmake -G Ninja -S . -B build/cppfront -DCMAKE_BUILD_TYPE=Release
-      - name: Build cppfront
-        run: cmake --build build/cppfront --config Release
-      - name: Install cppfront locally
-        run: cmake --install build/cppfront --config Release --prefix _local
-
-      # Regression tests
-      - name: Configure regression tests
-        run: >
-          cmake -G Ninja -S regression-tests -B build/regression-tests -DCMAKE_BUILD_TYPE=Release 
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
-      - name: Build regression tests
-        run: cmake --build build/regression-tests --config Release
-      - name: Run regression tests
-        run: ctest --output-on-failure -C Release -j 2
-        working-directory: build/regression-tests
-
-      # Example
-      - name: Configure example
-        run: >
-          cmake -G Ninja -S example -B build/example -DCMAKE_BUILD_TYPE=Release
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
-      - name: Build example
-        run: cmake --build build/example --config Release
-      - name: Run example
-        run: ./build/example/main && cmake -E cat xyzzy
+      - name: Run test script
+        run: ${{ matrix.script }}
