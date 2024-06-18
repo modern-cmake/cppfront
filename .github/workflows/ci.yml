@@ -27,7 +27,7 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2.0.3
         if: startsWith(matrix.os, 'ubuntu')
         with:
-          version: "18.1"
+          version: "18.1.4"
 
       - name: Run test script
         run: ./${{ matrix.script }}
