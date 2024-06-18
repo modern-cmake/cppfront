@@ -26,6 +26,8 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         if: startsWith(matrix.os, 'ubuntu')
+        with:
+          version: "18"
 
       - name: Run test script
         run: ./${{ matrix.script }}
