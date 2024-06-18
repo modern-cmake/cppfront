@@ -24,10 +24,12 @@ jobs:
       - uses: lukka/get-cmake@latest
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2.0.3
         if: startsWith(matrix.os, 'ubuntu')
-        with:
-          version: "18.1.4"
+        run: |
+          wget -qO llvm.tar.xz 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.4/clang+llvm-18.1.4-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+          tar xf llvm.tar.xz -C /opt/llvm --strip-components=1
+          echo 'CC=/opt/llvm/bin/clang' >> $GITHUB_ENV
+          echo 'CXX=/opt/llvm/bin/clang++' >> $GITHUB_ENV
 
       - name: Run test script
         run: ./${{ matrix.script }}
