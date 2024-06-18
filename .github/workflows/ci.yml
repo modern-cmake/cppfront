@@ -23,8 +23,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
 
-      - name: Setup GCC
-        uses: Dup4/actions-setup-gcc@v1
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        if: startsWith(matrix.os, 'ubuntu')
 
       - name: Run test script
         run: ./${{ matrix.script }}
