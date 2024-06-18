@@ -26,7 +26,7 @@ jobs:
       - name: Install LLVM and Clang
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          wget -O llvm.tar.xz 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.4/clang+llvm-18.1.4-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+          wget -qO llvm.tar.xz 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.4/clang+llvm-18.1.4-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
           mkdir -p /opt/llvm
           tar xf llvm.tar.xz -C /opt/llvm --strip-components=1
           echo 'CC=/opt/llvm/bin/clang' >> $GITHUB_ENV
