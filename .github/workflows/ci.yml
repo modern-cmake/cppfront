@@ -13,7 +13,7 @@ jobs:
         include:
           - CC: clang-18
             CXX: clang++-18
-            CFLAGS: -stdlib=libc++
+            CXXFLAGS: -stdlib=libc++
           - CC: gcc-14
             CXX: g++-14
     steps:
@@ -29,7 +29,7 @@ jobs:
         env:
           CC: ${{ matrix.CC }}
           CXX: ${{ matrix.CXX }}
-          CFLAGS: ${{ matrix.CFLAGS }}
+          CXXFLAGS: ${{ matrix.CXXFLAGS }}
   test-windows:
     name: Test Windows
     runs-on: windows-2022
