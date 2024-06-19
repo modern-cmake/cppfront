@@ -4,33 +4,26 @@ on:
     branches: [ main ]
   pull_request:
 jobs:
-  test:
-    name: test ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            script: test-all.ps1
-          - os: ubuntu-latest
-            script: test-all.sh
-    runs-on: ${{ matrix.os }}
+  test-linux:
+    name: Test Linux
+    runs-on: ubuntu-2404
     steps:
-      # System set-up
       - uses: actions/checkout@v3
         with:
           submodules: true
-      - uses: ilammy/msvc-dev-cmd@v1
-      - uses: lukka/get-cmake@latest
-
-      - name: Install LLVM and Clang
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 18 all
-          echo 'CC=clang-18' >> $GITHUB_ENV
-          echo 'CXX=clang++-18' >> $GITHUB_ENV
 
       - name: Run test script
-        run: ./${{ matrix.script }}
+        run: ./test-all.sh
+        env:
+          CC: clang-18
+          CXX: clang++-18
+  test-windows:
+    name: Test Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Run test script
+        run: ./test-all.ps1
