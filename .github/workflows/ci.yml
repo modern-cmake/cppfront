@@ -46,7 +46,17 @@ jobs:
         run: ./test-all.ps1
   test-macos:
     name: Test macOS
-    runs-on: macos-13
+    runs-on: macos-14
+    env:
+      CC: /usr/local/opt/llvm@18/bin/clang
+      CXX: /usr/local/opt/llvm@18/bin/clang++
     steps:
       - uses: actions/checkout@v4
-      - uses: mxschmitt/action-tmate@v3
+        with:
+          submodules: true
+
+      - name: Install build dependencies
+        run: brew install ninja llvm@18
+
+      - name: Run test script
+        run: ./test-all.sh
