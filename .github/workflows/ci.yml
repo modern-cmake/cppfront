@@ -20,6 +20,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Install Ninja
+        run: sudo apt-get install ninja
+
       - name: Run test script
         run: ./test-all.sh
         env:
