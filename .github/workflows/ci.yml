@@ -29,6 +29,7 @@ jobs:
         run: sudo apt-get install ninja-build libc++-18-dev libc++abi-18-dev
 
       - name: Run test script
+        timeout-minutes: 12
         run: ./test-all.sh
         env:
           CC: ${{ matrix.CC }}
@@ -43,6 +44,7 @@ jobs:
           submodules: true
 
       - name: Run test script
+        timeout-minutes: 12
         run: ./test-all.ps1
   test-macos:
     name: Test macOS
@@ -59,4 +61,5 @@ jobs:
         run: brew install ninja llvm@18
 
       - name: Run test script
+        timeout-minutes: 12
         run: ./test-all.sh
