@@ -24,7 +24,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Install Ninja
+      - name: Install build dependencies
         run: sudo apt-get install ninja-build libc++-18-dev libc++abi-18-dev
 
       - name: Run test script

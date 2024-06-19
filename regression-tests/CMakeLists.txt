@@ -51,7 +51,7 @@ function(cppfront_add_check_test)
 
     add_test(
         NAME "${ARG_NAME}"
-        COMMAND "${CMAKE_COMMAND}" -E compare_files "${ARG_NEW_FILE}" "${ARG_OLD_FILE}"
+        COMMAND "${CMAKE_COMMAND}" -E compare_files --ignore-eol "${ARG_NEW_FILE}" "${ARG_OLD_FILE}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
     set_tests_properties("${ARG_NAME}" PROPERTIES FIXTURES_REQUIRED "${ARG_FIXTURES_REQUIRED}")
