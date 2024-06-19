@@ -26,7 +26,7 @@ jobs:
       - name: Install LLVM and Clang
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          apt-get install libstdc++-12-dev g++-12
+          sudo apt-get install libstdc++-12-dev g++-12
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 18
