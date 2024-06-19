@@ -5,8 +5,16 @@ on:
   pull_request:
 jobs:
   test-linux:
-    name: Test Linux
-    runs-on: ubuntu-2404
+    name: Test Linux ${{ matrix.CC }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - CC: clang-18
+            CXX: clang++-18
+          - CC: gcc-14
+            CXX: g++14
     steps:
       - uses: actions/checkout@v3
         with:
@@ -15,8 +23,8 @@ jobs:
       - name: Run test script
         run: ./test-all.sh
         env:
-          CC: clang-18
-          CXX: clang++-18
+          CC: ${{ matrix.CC }}
+          CXX: ${{ matrix.CXX }}
   test-windows:
     name: Test Windows
     runs-on: windows-2022
