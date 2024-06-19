@@ -1,61 +1,65 @@
 name: CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [ main ]
   pull_request:
 jobs:
-  test:
-    name: test ${{ matrix.os }}
+  test-linux:
+    name: Test Linux ${{ matrix.CC }}
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          windows-latest,
-          # macos-latest, # cppfront is currently broken on AppleClang
-          ubuntu-latest,
-        ]
-    runs-on: ${{ matrix.os }}
+        include:
+          # Clang 18 is broken for some reason
+          # - CC: clang-18
+          #   CXX: clang++-18
+          #   CXXFLAGS: -stdlib=libc++
+          - CC: gcc-14
+            CXX: g++-14
     steps:
-      # System set-up
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: ilammy/msvc-dev-cmd@v1
-      - uses: lukka/get-cmake@latest
 
-      - name: Install GCC 11
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-11 g++-11
-          echo "CC=gcc-11" >> $GITHUB_ENV
-          echo "CXX=g++-11" >> $GITHUB_ENV
+      - name: Install build dependencies
+        run: sudo apt-get install ninja-build libc++-18-dev libc++abi-18-dev
 
-      # Main cppfront library
-      - name: Configure cppfront
-        run: cmake -G Ninja -S . -B build/cppfront -DCMAKE_BUILD_TYPE=Release
-      - name: Build cppfront
-        run: cmake --build build/cppfront --config Release
-      - name: Install cppfront locally
-        run: cmake --install build/cppfront --config Release --prefix _local
+      - name: Run test script
+        timeout-minutes: 12
+        run: ./test-all.sh
+        env:
+          CC: ${{ matrix.CC }}
+          CXX: ${{ matrix.CXX }}
+          CXXFLAGS: ${{ matrix.CXXFLAGS }}
+  test-windows:
+    name: Test Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-      # Regression tests
-      - name: Configure regression tests
-        run: >
-          cmake -G Ninja -S regression-tests -B build/regression-tests -DCMAKE_BUILD_TYPE=Release 
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
-      - name: Build regression tests
-        run: cmake --build build/regression-tests --config Release
-      - name: Run regression tests
-        run: ctest --output-on-failure -C Release -j 2
-        working-directory: build/regression-tests
+      - name: Run test script
+        timeout-minutes: 12
+        run: ./test-all.ps1
+  test-macos:
+    name: Test macOS
+    runs-on: macos-14
+    env:
+      CC: /opt/homebrew/opt/llvm@18/bin/clang
+      CXX: /opt/homebrew/opt/llvm@18/bin/clang++
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-      # Example
-      - name: Configure example
-        run: >
-          cmake -G Ninja -S example -B build/example -DCMAKE_BUILD_TYPE=Release
-          "-DCMAKE_PREFIX_PATH=${{github.workspace}}/_local"
-      - name: Build example
-        run: cmake --build build/example --config Release
-      - name: Run example
-        run: ./build/example/main && cmake -E cat xyzzy
+      - name: Install build dependencies
+        run: brew install ninja llvm@18
+
+      - name: Run test script
+        timeout-minutes: 12
+        run: ./test-all.sh
