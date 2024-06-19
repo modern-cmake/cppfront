@@ -139,6 +139,14 @@ function(cppfront_build_tests)
 
     cmake_path(GET ARG_SOURCE STEM test_name)
 
+    # skip broken tests on certain compilers
+    set(skip_tests_GNU
+        mixed-bugfix-for-ufcs-non-local
+    )
+    if (test_name IN_LIST "skip_tests_${CMAKE_CXX_COMPILER_ID}")
+        return ()
+    endif ()
+
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)

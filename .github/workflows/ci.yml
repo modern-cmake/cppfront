@@ -13,6 +13,7 @@ jobs:
         include:
           - CC: clang-18
             CXX: clang++-18
+            CFLAGS: -stdlib=libc++
           - CC: gcc-14
             CXX: g++-14
     steps:
@@ -21,13 +22,14 @@ jobs:
           submodules: true
 
       - name: Install Ninja
-        run: sudo apt-get install ninja-build
+        run: sudo apt-get install ninja-build libc++-18-dev libc++abi-18-dev
 
       - name: Run test script
         run: ./test-all.sh
         env:
           CC: ${{ matrix.CC }}
           CXX: ${{ matrix.CXX }}
+          CFLAGS: ${{ matrix.CFLAGS }}
   test-windows:
     name: Test Windows
     runs-on: windows-2022
