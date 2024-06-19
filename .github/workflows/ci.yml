@@ -48,8 +48,8 @@ jobs:
     name: Test macOS
     runs-on: macos-14
     env:
-      CC: /usr/local/opt/llvm@18/bin/clang
-      CXX: /usr/local/opt/llvm@18/bin/clang++
+      CC: /opt/homebrew/opt/llvm@18/bin/clang
+      CXX: /opt/homebrew/opt/llvm@18/bin/clang++
     steps:
       - uses: actions/checkout@v4
         with:
