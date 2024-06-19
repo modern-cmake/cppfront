@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.29)
 project(test-case)
 
 if (WIN32)
@@ -8,11 +8,6 @@ endif ()
 find_package(cppfront REQUIRED)
 
 add_executable(test-case "@ARG_SOURCE@")
-target_compile_options(
-    test-case
-    PRIVATE
-    "$<$<CXX_COMPILER_ID:MSVC>:/experimental:module>"
-)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
