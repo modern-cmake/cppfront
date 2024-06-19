@@ -14,13 +14,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - CC: clang-18
-            CXX: clang++-18
-            CXXFLAGS: -stdlib=libc++
+          # Clang 18 is broken for some reason
+          # - CC: clang-18
+          #   CXX: clang++-18
+          #   CXXFLAGS: -stdlib=libc++
           - CC: gcc-14
             CXX: g++-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -37,9 +38,15 @@ jobs:
     name: Test Windows
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Run test script
         run: ./test-all.ps1
+  test-macos:
+    name: Test macOS
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mxschmitt/action-tmate@v3
