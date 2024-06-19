@@ -34,11 +34,11 @@ function(_cppfront_generate_source src out)
 
     # assume no SHA256 collisions
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront/")
-    if(src MATCHES [[.*\.h2]])
-      set(ext ".h")
-    else()
-      set(ext ".cpp")
-    endif()
+    if (src MATCHES [[.*\.h2]])
+        set(ext ".h")
+    else ()
+        set(ext ".cpp")
+    endif ()
     set(out_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}${ext}")
 
     add_custom_command(
@@ -65,21 +65,53 @@ function(cppfront_enable)
     cmake_parse_arguments(PARSE_ARGV 0 ARG "" "" "TARGETS")
 
     foreach (tgt IN LISTS ARG_TARGETS)
-        get_property(sources TARGET "${tgt}" PROPERTY SOURCES)
-        list(FILTER sources INCLUDE REGEX "\\.(cpp|h)2$")
+        set(need_cpp2util 0)
 
+        # Classic SOURCES property
+
+        get_target_property(type "${tgt}" TYPE)
+        if (type STREQUAL "INTERFACE_LIBRARY")
+            set(visibility "INTERFACE")
+        else ()
+            set(visibility "PRIVATE")
+        endif ()
+
+        get_target_property(sources "${tgt}" SOURCES)
+        list(FILTER sources INCLUDE REGEX "\\.(cpp|h)2$")
         if (sources)
-            get_target_property(type "${tgt}" TYPE)
-            if (type STREQUAL "INTERFACE_LIBRARY")
-                set(visibility "INTERFACE")
-            else ()
-                set(visibility "PRIVATE")
-            endif ()
-            
-            target_link_libraries("${tgt}" ${visibility} cppfront::cpp2util)
+            set(need_cpp2util 1)
             cppfront_generate_cpp(cpp1sources ${sources})
             target_sources("${tgt}" ${visibility} ${cpp1sources})
             set_source_files_properties(${cpp1sources} PROPERTIES CXX_SCAN_FOR_MODULES ON)
+        endif ()
+
+        # New CXX_MODULES file sets
+
+        get_target_property(interface_modules "${tgt}" INTERFACE_CXX_MODULE_SETS)
+        get_target_property(private_modules "${tgt}" CXX_MODULE_SETS)
+
+        set(all_modules ${interface_modules} ${private_modules})
+        list(REMOVE_DUPLICATES all_modules)
+
+        foreach (module_set IN LISTS all_modules)
+            get_target_property(sources "${tgt}" "CXX_MODULE_SET_${module_set}")
+            list(FILTER sources INCLUDE REGEX "\\.(cpp|h)2$")
+
+            if (sources)
+                set(need_cpp2util 1)
+                cppfront_generate_cpp(cpp1sources ${sources})
+
+                get_target_property(orig "${tgt}" "CXX_MODULE_SET_${module_set}")
+                list(REMOVE_ITEM orig ${sources})
+                list(APPEND orig ${cpp1sources})
+
+                set_target_properties("${tgt}" PROPERTIES "CXX_MODULE_SET_${module_set}" "${orig}")
+                set_property(TARGET "${tgt}" APPEND PROPERTY "CXX_MODULE_DIRS_${module_set}" "${CMAKE_BINARY_DIR}/_cppfront")
+            endif ()
+        endforeach ()
+
+        if (need_cpp2util)
+            target_link_libraries("${tgt}" ${visibility} cppfront::cpp2util)
         endif ()
     endforeach ()
 endfunction()
