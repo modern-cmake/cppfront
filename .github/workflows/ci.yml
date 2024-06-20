@@ -8,25 +8,32 @@ on:
   pull_request:
 jobs:
   test-linux:
-    name: Test Linux ${{ matrix.CC }}
-    runs-on: ubuntu-24.04
+    name: Test ${{ matrix.name }} ${{ matrix.CC }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Clang 18 is broken for some reason
-          # - CC: clang-18
-          #   CXX: clang++-18
-          #   CXXFLAGS: -stdlib=libc++
-          - CC: gcc-14
+          - name: Linux
+            runner: ubuntu-24.04
+            CC: gcc-14
+            CXX: g++-14
+          - name: macOS
+            runner: macos-14
+            CC: gcc-14
             CXX: g++-14
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Install build dependencies
+      - name: Install APT dependencies
+        if: matrix.name == 'Linux'
         run: sudo apt-get install ninja-build libc++-18-dev libc++abi-18-dev
+
+      - name: Install Homebrew dependencies
+        if: matrix.name == 'macOS'
+        run: brew install ninja gcc@14
 
       - name: Run test script
         timeout-minutes: 12
@@ -46,20 +53,3 @@ jobs:
       - name: Run test script
         timeout-minutes: 12
         run: ./test-all.ps1
-  test-macos:
-    name: Test macOS
-    runs-on: macos-14
-    env:
-      CC: /opt/homebrew/opt/llvm@18/bin/clang
-      CXX: /opt/homebrew/opt/llvm@18/bin/clang++
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Install build dependencies
-        run: brew install ninja llvm@18
-
-      - name: Run test script
-        timeout-minutes: 12
-        run: ./test-all.sh
