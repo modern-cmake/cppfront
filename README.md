@@ -40,7 +40,7 @@ $ cmake --build build --target install
 Now just write your project like normal:
 
 ```cmake
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(example)
 
 find_package(cppfront REQUIRED)
@@ -66,7 +66,7 @@ chance it will be wonky.
 Here's the code.
 
 ```cmake
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(example)
 
 include(FetchContent)
