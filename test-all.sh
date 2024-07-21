@@ -2,9 +2,6 @@
 
 set -eo pipefail
 
-export CC=clang-19
-export CXX=clang++-19
-
 export CMAKE_GENERATOR="Ninja"
 export CMAKE_BUILD_TYPE="Release"
 export CMAKE_PREFIX_PATH="$PWD/_local"
