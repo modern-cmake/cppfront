@@ -7,9 +7,7 @@ Sutter's [cppfront](https://github.com/hsutter/cppfront)
 compiler. Go there to learn more about that project.
 
 This repository adds a CMake build with some "magic" helpers to make it easier
-to use cpp2.
-
-Requires CMake 3.29+. Will soon require 3.30 for better native module support.
+to use cpp2. Requires CMake 3.30+.
 
 **Disclaimer:** As `cppfront` is highly experimental, expect abrupt,
 backwards-incompatible changes to be made here, too. This isn't a
