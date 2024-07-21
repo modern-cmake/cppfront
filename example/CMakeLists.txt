@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(cpp2-example)
 
 find_package(cppfront REQUIRED)

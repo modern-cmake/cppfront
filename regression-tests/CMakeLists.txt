@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(cppfront-regression-tests LANGUAGES CXX)
 
 option(CPPFRONT_DEVELOPING "Test results are updated.")

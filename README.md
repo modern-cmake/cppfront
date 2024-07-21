@@ -7,9 +7,7 @@ Sutter's [cppfront](https://github.com/hsutter/cppfront)
 compiler. Go there to learn more about that project.
 
 This repository adds a CMake build with some "magic" helpers to make it easier
-to use cpp2.
-
-Requires CMake 3.29+. Will soon require 3.30 for better native module support.
+to use cpp2. Requires CMake 3.30+.
 
 **Disclaimer:** As `cppfront` is highly experimental, expect abrupt,
 backwards-incompatible changes to be made here, too. This isn't a
@@ -40,7 +38,7 @@ $ cmake --build build --target install
 Now just write your project like normal:
 
 ```cmake
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(example)
 
 find_package(cppfront REQUIRED)
@@ -66,7 +64,7 @@ chance it will be wonky.
 Here's the code.
 
 ```cmake
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.30)
 project(example)
 
 include(FetchContent)
