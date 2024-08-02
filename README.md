@@ -102,7 +102,7 @@ configuration:
 
 * `cppfront::cppfront` -- this is the executable for the cppfront compiler
 * `cppfront::cpp2util` -- this is an `INTERFACE` library providing the path to
-  the `cpp2util.h` runtime header.
+  the `cpp2util.h` and `cpp2regex.h` runtime headers.
 
 ### Options
 

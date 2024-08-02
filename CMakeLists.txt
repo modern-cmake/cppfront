@@ -60,7 +60,7 @@ target_sources(
     INTERFACE
     FILE_SET HEADERS
     BASE_DIRS cppfront/include
-    FILES cppfront/include/cpp2util.h
+    FILES cppfront/include/cpp2util.h cppfront/include/cpp2regex.h
 )
 
 if (NOT CPPFRONT_NO_SYSTEM)
