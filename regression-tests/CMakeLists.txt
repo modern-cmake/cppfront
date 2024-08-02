@@ -16,10 +16,22 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(compiler_id "gcc")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     set(compiler_id "apple-clang")
-else ()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
+        set(compiler_major_version 2022)
+    elseif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
+        set(compiler_major_version 2019)
+    endif ()
+endif ()
+
+if (NOT compiler_id)
     string(TOLOWER "${CMAKE_CXX_COMPILER_ID}" compiler_id)
 endif ()
-string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+
+if (NOT compiler_major_version)
+    string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+endif ()
+
 set(COMPILER_ITEM_NAME "${compiler_id}-${compiler_major_version}")
 
 # Setup `BUILD_RESULTS_DIR`.
@@ -144,7 +156,7 @@ function(cppfront_build_tests)
         mixed-bugfix-for-ufcs-non-local
     )
     if (test_name IN_LIST "skip_tests_${CMAKE_CXX_COMPILER_ID}")
-        return ()
+        return()
     endif ()
 
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
@@ -183,7 +195,7 @@ function(cppfront_build_tests)
             OLD_FILE "${expected_output_file}"
             FIXTURES_REQUIRED "build/${test_name}"
         )
-    endif()
+    endif ()
 
     add_test(
         NAME "build/execute/${test_name}"
@@ -208,13 +220,13 @@ function(cppfront_build_tests)
             OLD_FILE "${expected_execution_file}"
             FIXTURES_REQUIRED "build/execute/${test_name}"
         )
-    endif()
+    endif ()
 
     if (CPPFRONT_DEVELOPING)
         # Trigger regeneration to add the `check` tests for newly added results.
         if (NOT DEFINED expected_output_file OR NOT DEFINED expected_execution_file)
             file(GLOB unused CONFIGURE_DEPENDS "${BUILD_RESULTS_DIR}/${gen_cpp_src}.*")
-        endif()
+        endif ()
 
         add_test(
             NAME "build/update/${test_name}"
