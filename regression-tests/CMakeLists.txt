@@ -11,8 +11,6 @@ find_package(cppfront REQUIRED)
 set(REGRESSION_TESTS_DIR "${CMAKE_CURRENT_LIST_DIR}/../cppfront/regression-tests")
 set(TEST_RESULTS_DIR "${REGRESSION_TESTS_DIR}/test-results")
 
-include(./Cxx23Tests.cmake)
-
 # Set `COMPILER_ITEM_NAME`.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(compiler_id "gcc")
@@ -60,7 +58,7 @@ function(cppfront_add_check_test)
 endfunction()
 
 function(cppfront_command_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "CPPFRONT_FLAGS")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
@@ -77,7 +75,7 @@ function(cppfront_command_tests)
         -D "OUTPUT_FILE=${ARG_SOURCE}.output"
         -P "ExecuteWithRedirection.cmake"
         --
-        "${CPPFRONT_EXECUTABLE}" "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
+        "${CPPFRONT_EXECUTABLE}" "${ARG_SOURCE}" ${ARG_CPPFRONT_FLAGS}
         ${COMMAND_ERROR_IS_FATAL}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
@@ -131,13 +129,13 @@ function(cppfront_command_tests)
     if (DEFINED build_test_depends AND DEFINED gen_cpp_src)
         cppfront_build_tests(
             SOURCE ${ARG_SOURCE}
-            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+            CPPFRONT_FLAGS ${ARG_CPPFRONT_FLAGS}
         )
     endif ()
 endfunction()
 
 function(cppfront_build_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "CPPFRONT_FLAGS")
 
     cmake_path(GET ARG_SOURCE STEM test_name)
 
@@ -155,12 +153,6 @@ function(cppfront_build_tests)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
     configure_file("cmake/test-case-config.cmake.in" "${test_dir}/test-case-config.cmake.in" COPYONLY)
 
-    set(extra_flags "")
-    test_requires_cxx23(OUTPUT_VARIABLE cxx23 TEST_NAME "${test_name}")
-    if (cxx23)
-        list(APPEND extra_flags "-DCMAKE_CXX_STANDARD=23")
-    endif ()
-
     add_test(
         NAME "build/${test_name}"
         COMMAND
@@ -172,8 +164,7 @@ function(cppfront_build_tests)
         "-DCMAKE_BUILD_TYPE=Release"
         "-Dcppfront_DIR=${cppfront_DIR}"
         "-Dcppfront-exe_DIR=${cppfront-exe_DIR}"
-        "-DCPPFRONT_FLAGS=${ARG_EXTRA_FLAGS}"
-        ${extra_flags}
+        "-DCPPFRONT_FLAGS=${ARG_CPPFRONT_FLAGS}"
         # There's `CMAKE_CXX_LINKER_LAUNCHER`, too. So far, it's not needed.
         "-DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_COMMAND};-D;OUTPUT_FILE=${gen_cpp_src}.output;-P;../../ExecuteWithRedirection.cmake;--"
     )
@@ -244,7 +235,7 @@ function(cppfront_build_tests)
 endfunction()
 
 function(cppfront_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "GROUP" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "GROUP" "CPPFRONT_FLAGS")
 
     # Naughty, but needed for quick rebasing... :(
     file(
@@ -265,10 +256,10 @@ function(cppfront_tests)
         cppfront_command_tests(
             SOURCE ${src}
             EXPECTED_FILE ${expected_file}
-            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+            CPPFRONT_FLAGS ${ARG_CPPFRONT_FLAGS}
         )
     endforeach ()
 endfunction()
 
 cppfront_tests(GROUP mixed)
-cppfront_tests(GROUP pure2 EXTRA_FLAGS -p)
+cppfront_tests(GROUP pure2 CPPFRONT_FLAGS -p)

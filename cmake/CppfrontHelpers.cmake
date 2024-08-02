@@ -1,3 +1,11 @@
+set(CPPFRONT_FLAGS ""
+    CACHE STRING "Global flags to pass to cppfront when generating code")
+
+define_property(
+    TARGET PROPERTY CPPFRONT_FLAGS
+    BRIEF_DOCS "Target-specific flags to pass to cppfront when generating code"
+)
+
 function(_cppfront_unique_name base hash outvar)
     string(LENGTH "${hash}" len)
     foreach (i RANGE 0 "${len}")
@@ -20,6 +28,8 @@ function(_cppfront_unique_name base hash outvar)
 endfunction()
 
 function(_cppfront_generate_source src out)
+    cmake_parse_arguments(PARSE_ARGV 2 ARG "" "TARGET" "")
+
     file(REAL_PATH "${src}" src)
     string(SHA256 src_hash "${src}")
 
@@ -34,17 +44,25 @@ function(_cppfront_generate_source src out)
 
     # assume no SHA256 collisions
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_cppfront/")
-    if(src MATCHES [[.*\.h2]])
-      set(ext ".h")
-    else()
-      set(ext ".cpp")
-    endif()
+    if (src MATCHES [[.*\.h2]])
+        set(ext ".h")
+    else ()
+        set(ext ".cpp")
+    endif ()
     set(out_file "${CMAKE_BINARY_DIR}/_cppfront/${basename}${ext}")
+
+    if (ARG_TARGET)
+        set(target_flags "$<TARGET_PROPERTY:${ARG_TARGET},CPPFRONT_FLAGS>")
+        set(target_flags "$<TARGET_GENEX_EVAL:${ARG_TARGET},${target_flags}>")
+    else ()
+        set(target_flags "")
+    endif ()
 
     add_custom_command(
         OUTPUT "${out_file}"
-        COMMAND cppfront::cppfront "${src}" -o "${out_file}" ${CPPFRONT_FLAGS}
+        COMMAND cppfront::cppfront "${src}" -o "${out_file}" ${CPPFRONT_FLAGS} ${target_flags}
         DEPENDS cppfront::cppfront "${src}"
+        COMMAND_EXPAND_LISTS
         VERBATIM
     )
 
@@ -52,13 +70,46 @@ function(_cppfront_generate_source src out)
     set("${out}" "${out_file}" PARENT_SCOPE)
 endfunction()
 
-function(cppfront_generate_cpp srcs)
-    set(cpp2srcs "")
-    foreach (src IN LISTS ARGN)
-        _cppfront_generate_source("${src}" cpp2)
-        list(APPEND cpp2srcs "${cpp2}")
+function(cppfront_target_sources)
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "TARGET" "SOURCES")
+
+    if (NOT TARGET "${ARG_TARGET}")
+        message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}: TARGET argument assigned non-existent target `${ARG_TARGET}`")
+    endif ()
+
+    if (NOT ARG_SOURCES)
+        return()
+    endif ()
+
+    # Determine flag visibility
+    get_target_property(type "${ARG_TARGET}" TYPE)
+    if (type STREQUAL "INTERFACE_LIBRARY")
+        set(visibility "INTERFACE")
+    else ()
+        set(visibility "PRIVATE")
+    endif ()
+
+    # Check if flags imply we need C++23
+    set(flags ${CPPFRONT_FLAGS} "$<TARGET_PROPERTY:${ARG_TARGET},CPPFRONT_FLAGS>")
+    set(flags "$<TARGET_GENEX_EVAL:${ARG_TARGET},${flags}>")
+    set(flags "$<LIST:TRANSFORM,${flags},REPLACE,^-p.*$,-im>") # -p[ure-cpp2] implies -im[port-std]
+    set(flags "$<LIST:FILTER,${flags},INCLUDE,^-(im|in)>") # -im[port-std] can be overridden by -in[clude-std]
+    set(flags "$<LIST:TRANSFORM,${flags},REPLACE,^-(im|in).*$,-\\1>") # normalize to short flag
+    set(flags "$<LIST:SUBLIST,$<LIST:REVERSE,${flags}>,0,1>") # get the last flag or none
+    target_compile_features("${ARG_TARGET}" ${visibility} "$<$<STREQUAL:${flags},-im>:cxx_std_23>")
+
+    # Link to utility libraries
+    target_link_libraries("${ARG_TARGET}" ${visibility} cppfront::cpp2util)
+
+    set(cpp1sources "")
+    foreach (src IN LISTS ARG_SOURCES)
+        _cppfront_generate_source("${src}" cpp2 TARGET ${ARG_TARGET})
+        list(APPEND cpp1sources "${cpp2}")
     endforeach ()
-    set("${srcs}" "${cpp2srcs}" PARENT_SCOPE)
+
+    set_source_files_properties(${cpp1sources} PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+    target_sources("${ARG_TARGET}" ${visibility} ${cpp1sources})
 endfunction()
 
 function(cppfront_enable)
@@ -68,19 +119,10 @@ function(cppfront_enable)
         get_property(sources TARGET "${tgt}" PROPERTY SOURCES)
         list(FILTER sources INCLUDE REGEX "\\.(cpp|h)2$")
 
-        if (sources)
-            get_target_property(type "${tgt}" TYPE)
-            if (type STREQUAL "INTERFACE_LIBRARY")
-                set(visibility "INTERFACE")
-            else ()
-                set(visibility "PRIVATE")
-            endif ()
-            
-            target_link_libraries("${tgt}" ${visibility} cppfront::cpp2util)
-            cppfront_generate_cpp(cpp1sources ${sources})
-            target_sources("${tgt}" ${visibility} ${cpp1sources})
-            set_source_files_properties(${cpp1sources} PROPERTIES CXX_SCAN_FOR_MODULES ON)
-        endif ()
+        cppfront_target_sources(
+            TARGET "${tgt}"
+            SOURCES ${sources}
+        )
     endforeach ()
 endfunction()
 
