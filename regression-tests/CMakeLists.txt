@@ -16,10 +16,22 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(compiler_id "gcc")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     set(compiler_id "apple-clang")
-else ()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
+        set(compiler_major_version 2022)
+    elseif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18)
+        set(compiler_major_version 2019)
+    endif ()
+endif ()
+
+if (NOT compiler_id)
     string(TOLOWER "${CMAKE_CXX_COMPILER_ID}" compiler_id)
 endif ()
-string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+
+if (NOT compiler_major_version)
+    string(REGEX MATCH "[0-9]+" compiler_major_version "${CMAKE_CXX_COMPILER_VERSION}")
+endif ()
+
 set(COMPILER_ITEM_NAME "${compiler_id}-${compiler_major_version}")
 
 # Setup `BUILD_RESULTS_DIR`.
@@ -58,7 +70,7 @@ function(cppfront_add_check_test)
 endfunction()
 
 function(cppfront_command_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE;EXPECTED_FILE" "CPPFRONT_FLAGS")
 
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${ARG_SOURCE}" COPYONLY)
 
@@ -75,7 +87,7 @@ function(cppfront_command_tests)
         -D "OUTPUT_FILE=${ARG_SOURCE}.output"
         -P "ExecuteWithRedirection.cmake"
         --
-        "${CPPFRONT_EXECUTABLE}" "${ARG_SOURCE}" ${ARG_EXTRA_FLAGS}
+        "${CPPFRONT_EXECUTABLE}" "${ARG_SOURCE}" ${ARG_CPPFRONT_FLAGS}
         ${COMMAND_ERROR_IS_FATAL}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
@@ -129,13 +141,13 @@ function(cppfront_command_tests)
     if (DEFINED build_test_depends AND DEFINED gen_cpp_src)
         cppfront_build_tests(
             SOURCE ${ARG_SOURCE}
-            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+            CPPFRONT_FLAGS ${ARG_CPPFRONT_FLAGS}
         )
     endif ()
 endfunction()
 
 function(cppfront_build_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "SOURCE" "CPPFRONT_FLAGS")
 
     cmake_path(GET ARG_SOURCE STEM test_name)
 
@@ -144,7 +156,7 @@ function(cppfront_build_tests)
         mixed-bugfix-for-ufcs-non-local
     )
     if (test_name IN_LIST "skip_tests_${CMAKE_CXX_COMPILER_ID}")
-        return ()
+        return()
     endif ()
 
     set(test_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
@@ -152,93 +164,6 @@ function(cppfront_build_tests)
     configure_file("${REGRESSION_TESTS_DIR}/${ARG_SOURCE}" "${test_dir}/${ARG_SOURCE}" COPYONLY)
     configure_file("cmake/CMakeLists.txt.in" "${test_dir}/CMakeLists.txt" @ONLY)
     configure_file("cmake/test-case-config.cmake.in" "${test_dir}/test-case-config.cmake.in" COPYONLY)
-
-    set(
-        cxx_23_tests
-        pure2-assert-expected-not-null
-        pure2-assert-optional-not-null
-        pure2-assert-shared-ptr-not-null
-        pure2-assert-unique-ptr-not-null
-        pure2-bounds-safety-span
-        pure2-break-continue
-        pure2-bugfix-for-assign-expression-list
-        pure2-bugfix-for-discard-precedence
-        pure2-bugfix-for-empty-index
-        pure2-bugfix-for-indexed-call
-        pure2-bugfix-for-max-munch
-        pure2-bugfix-for-memberwise-base-assignment
-        pure2-bugfix-for-name-lookup-and-value-decoration
-        pure2-bugfix-for-non-local-function-expression
-        pure2-bugfix-for-non-local-initialization
-        pure2-bugfix-for-optional-template-argument-list
-        pure2-bugfix-for-requires-clause-in-forward-declaration
-        pure2-bugfix-for-requires-clause-unbraced-function-initializer
-        pure2-bugfix-for-template-argument
-        pure2-bugfix-for-ufcs-arguments
-        pure2-bugfix-for-ufcs-name-lookup
-        pure2-bugfix-for-ufcs-noexcept
-        pure2-bugfix-for-ufcs-sfinae
-        pure2-bugfix-for-unbraced-function-expression
-        pure2-bugfix-for-variable-template
-        pure2-chained-comparisons
-        pure2-concept-definition
-        pure2-contracts
-        pure2-defaulted-comparisons-and-final-types
-        pure2-enum
-        pure2-for-loop-range-with-lambda
-        pure2-forward-return
-        pure2-function-multiple-forward-arguments
-        pure2-hello
-        pure2-initialization-safety-with-else-if
-        pure2-inspect-expression-in-generic-function-multiple-types
-        pure2-inspect-expression-with-as-in-generic-function
-        pure2-inspect-fallback-with-variant-any-optional
-        pure2-inspect-generic-void-empty-with-variant-any-optional
-        pure2-interpolation
-        pure2-intro-example-hello-2022
-        pure2-intro-example-three-loops
-        pure2-is-with-free-functions-predicate
-        pure2-is-with-unnamed-predicates
-        pure2-is-with-variable-and-value
-        pure2-last-use
-        pure2-look-up-parameter-across-unnamed-function
-        pure2-main-args
-        pure2-more-wildcards
-        pure2-print
-        pure2-raw-string-literal-and-interpolation
-        pure2-repeated-call
-        pure2-requires-clauses
-        pure2-return-tuple-operator
-        pure2-statement-scope-parameters
-        pure2-stdio
-        pure2-stdio-with-raii
-        pure2-synthesize-rightshift-and-rightshifteq
-        pure2-template-parameter-lists
-        pure2-trailing-commas
-        pure2-type-and-namespace-aliases
-        pure2-type-safety-1
-        pure2-type-safety-2-with-inspect-expression
-        pure2-types-basics
-        pure2-types-down-upcast
-        pure2-types-inheritance
-        pure2-types-order-independence-and-nesting
-        pure2-types-ordering-via-meta-functions
-        pure2-types-smf-and-that-1-provide-everything
-        pure2-types-smf-and-that-2-provide-mvconstruct-and-cpassign
-        pure2-types-smf-and-that-3-provide-mvconstruct-and-mvassign
-        pure2-types-smf-and-that-4-provide-cpassign-and-mvassign
-        pure2-types-smf-and-that-5-provide-nothing-but-general-case
-        pure2-types-that-parameters
-        pure2-types-value-types-via-meta-functions
-        pure2-ufcs-member-access-and-chaining
-        pure2-union
-        pure2-variadics
-        pure2-various-string-literals
-    )
-    set(extra_flags)
-    if (test_name IN_LIST cxx_23_tests)
-        list(APPEND extra_flags "-DCMAKE_CXX_STANDARD=23")
-    endif ()
 
     add_test(
         NAME "build/${test_name}"
@@ -251,8 +176,7 @@ function(cppfront_build_tests)
         "-DCMAKE_BUILD_TYPE=Release"
         "-Dcppfront_DIR=${cppfront_DIR}"
         "-Dcppfront-exe_DIR=${cppfront-exe_DIR}"
-        "-DCPPFRONT_FLAGS=${ARG_EXTRA_FLAGS}"
-        ${extra_flags}
+        "-DCPPFRONT_FLAGS=${ARG_CPPFRONT_FLAGS}"
         # There's `CMAKE_CXX_LINKER_LAUNCHER`, too. So far, it's not needed.
         "-DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_COMMAND};-D;OUTPUT_FILE=${gen_cpp_src}.output;-P;../../ExecuteWithRedirection.cmake;--"
     )
@@ -271,7 +195,7 @@ function(cppfront_build_tests)
             OLD_FILE "${expected_output_file}"
             FIXTURES_REQUIRED "build/${test_name}"
         )
-    endif()
+    endif ()
 
     add_test(
         NAME "build/execute/${test_name}"
@@ -296,13 +220,13 @@ function(cppfront_build_tests)
             OLD_FILE "${expected_execution_file}"
             FIXTURES_REQUIRED "build/execute/${test_name}"
         )
-    endif()
+    endif ()
 
     if (CPPFRONT_DEVELOPING)
         # Trigger regeneration to add the `check` tests for newly added results.
         if (NOT DEFINED expected_output_file OR NOT DEFINED expected_execution_file)
             file(GLOB unused CONFIGURE_DEPENDS "${BUILD_RESULTS_DIR}/${gen_cpp_src}.*")
-        endif()
+        endif ()
 
         add_test(
             NAME "build/update/${test_name}"
@@ -323,7 +247,7 @@ function(cppfront_build_tests)
 endfunction()
 
 function(cppfront_tests)
-    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "GROUP" "EXTRA_FLAGS")
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "GROUP" "CPPFRONT_FLAGS")
 
     # Naughty, but needed for quick rebasing... :(
     file(
@@ -344,10 +268,10 @@ function(cppfront_tests)
         cppfront_command_tests(
             SOURCE ${src}
             EXPECTED_FILE ${expected_file}
-            EXTRA_FLAGS ${ARG_EXTRA_FLAGS}
+            CPPFRONT_FLAGS ${ARG_CPPFRONT_FLAGS}
         )
     endforeach ()
 endfunction()
 
 cppfront_tests(GROUP mixed)
-cppfront_tests(GROUP pure2 EXTRA_FLAGS -p)
+cppfront_tests(GROUP pure2 CPPFRONT_FLAGS -p)
