@@ -14,10 +14,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Clang 18 is broken for some reason
-          # - CC: clang-18
-          #   CXX: clang++-18
-          #   CXXFLAGS: -stdlib=libc++
+          # Clang 18.1.3 or later works
+          - CC: clang-18
+            CXX: clang++-18
+            CXXFLAGS: -stdlib=libc++
           - CC: gcc-14
             CXX: g++-14
     steps:
