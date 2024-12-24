@@ -47,6 +47,23 @@ target_sources(
           cppfront/source/sema.h
 )
 
+# clang-cl: Clang on windows
+if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+    set(CLANG_CL 1)
+endif()
+
+# Fix for debug builds on windows
+# "fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj"
+target_compile_options(
+    cppfront_cppfront PRIVATE
+    # Visual C++ for windows
+    $<$<BOOL:${MSVC}>:/bigobj>
+    # GCC for windows
+    $<$<BOOL:${MINGW}>:-Wa,-mbig-obj>
+    # Clang for windows
+    $<$<BOOL:${CLANG_CL}>:-bigobj>
+)
+
 ##
 # Target definition for cpp2util runtime library
 
